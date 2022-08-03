@@ -124,7 +124,7 @@ async fn main() {
 
     let res: Result<CommandOutput> = match cli.command {
         CliCommand::App(app_cli) => app::handle_command(app_cli, output_kind).await,
-        CliCommand::Build(build_cli) => build::handle_command(build_cli),
+        CliCommand::Build(build_cli) => build::handle_command(build_cli, output_kind),
         CliCommand::Call(call_cli) => call::handle_command(call_cli.command()).await,
         CliCommand::Claims(claims_cli) => claims::handle_command(claims_cli, output_kind).await,
         CliCommand::Ctl(ctl_cli) => ctl::handle_command(ctl_cli, output_kind).await,
