@@ -1,5 +1,3 @@
-use std::{path::PathBuf, process};
-
 use crate::{
     claims::{sign_file, ActorMetadata, SignCommand},
     util::{CommandOutput, OutputKind},
@@ -51,7 +49,7 @@ fn build_rust_actor(
 ) -> Result<PathBuf> {
     let result = process::Command::new("cargo")
         .args(["build", "--release"])
-        .output()?;
+        .status()?;
 
     let wasm_file = PathBuf::from(format!(
         "{}/{}/release/{}.wasm",
