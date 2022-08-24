@@ -54,7 +54,7 @@ struct RawActorConfig {
     /// The registry to push to. eg. "localhost:8080"
     pub registry: Option<String>,
     /// Whether to push to the registry insecurely. Defaults to false.
-    pub push_insecure: bool,
+    pub push_insecure: Option<bool>,
     /// The directory to store the private keys in. Defaults to "./keys".
     pub key_directory: Option<PathBuf>,
     /// The filename of the signed wasm actor.
@@ -72,7 +72,7 @@ impl TryFrom<RawActorConfig> for ActorConfig {
         Ok(Self {
             claims: raw_config.claims.unwrap_or_default(),
             registry: raw_config.registry,
-            push_insecure: raw_config.push_insecure,
+            push_insecure: raw_config.push_insecure.unwrap_or(false),
             key_directory: raw_config
                 .key_directory
                 .unwrap_or_else(|| PathBuf::from("./keys")),
@@ -143,15 +143,15 @@ impl TryFrom<RawInterfaceConfig> for InterfaceConfig {
 
 #[derive(serde::Deserialize, Debug, PartialEq, Clone, Default)]
 pub struct RustConfig {
-    /// The path to the cargo binary. Optional, will default tothe default `cargo` if not specified.
+    /// The path to the cargo binary. Optional, will default to the default `cargo` if not specified.
     pub cargo_path: Option<PathBuf>,
     /// Path to cargo/rust's `target` directory. Optional, defaults to `./target`.
     pub target_path: Option<PathBuf>,
 }
-#[derive(serde::Deserialize, Debug, PartialEq)]
+#[derive(serde::Deserialize, Debug, PartialEq, Default, Clone)]
 
 struct RawRustConfig {
-    /// The path to the cargo binary. Optional, will default tothe default `cargo` if not specified.
+    /// The path to the cargo binary. Optional, will default to the default `cargo` if not specified.
     pub cargo_path: Option<PathBuf>,
     /// Path to cargo/rust's `target` directory. Optional, defaults to `./target`.
     pub target_path: Option<PathBuf>,
@@ -196,13 +196,13 @@ struct RawProjectConfig {
     pub tinygo: Option<RawTinyGoConfig>,
 }
 
-#[derive(serde::Deserialize, Debug, PartialEq, Clone)]
+#[derive(serde::Deserialize, Debug, PartialEq, Clone, Default)]
 pub struct TinyGoConfig {
     /// The path to the tinygo binary. Optional, will default to `tinygo` if not specified.
     pub tinygo_path: Option<PathBuf>,
 }
 
-#[derive(serde::Deserialize, Debug, PartialEq)]
+#[derive(serde::Deserialize, Debug, PartialEq, Default)]
 struct RawTinyGoConfig {
     /// The path to the tinygo binary. Optional, will default to `tinygo` if not specified.
     pub tinygo_path: Option<PathBuf>,
@@ -311,18 +311,14 @@ impl TryFrom<RawProjectConfig> for ProjectConfig {
         };
 
         let language_config = match raw_project_config.language.as_str() {
-            "rust" => {
-                let rust_config = raw_project_config
-                    .rust
-                    .ok_or_else(|| anyhow!("Missing rust config in wasmcloud.toml"))?;
-                LanguageConfig::Rust(rust_config.try_into()?)
-            }
-            "tinygo" => {
-                let tinygo_config = raw_project_config
-                    .tinygo
-                    .ok_or_else(|| anyhow!("Missing tinygo config in wasmcloud.toml"))?;
-                LanguageConfig::TinyGo(tinygo_config.try_into()?)
-            }
+            "rust" => match raw_project_config.rust {
+                Some(rust_config) => LanguageConfig::Rust(rust_config.try_into()?),
+                None => LanguageConfig::Rust(RustConfig::default()),
+            },
+            "tinygo" => match raw_project_config.tinygo {
+                Some(tinygo_config) => LanguageConfig::TinyGo(tinygo_config.try_into()?),
+                None => LanguageConfig::TinyGo(TinyGoConfig::default()),
+            },
             _ => {
                 return Err(anyhow!(
                     "Unknown language in wasmcloud.toml: {}",

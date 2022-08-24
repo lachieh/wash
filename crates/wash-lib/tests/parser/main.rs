@@ -220,3 +220,44 @@ fn nonexistent_folder() {
         err.to_string().as_str()
     );
 }
+
+#[test]
+fn minimal_rust_actor() {
+    let result = get_config(
+        Some(PathBuf::from(
+            "./tests/parser/files/minimal_rust_actor.toml",
+        )),
+        None,
+    );
+
+    let config = assert_ok!(result);
+
+    assert_eq!(
+        config.language,
+        LanguageConfig::Rust(RustConfig {
+            cargo_path: None,
+            target_path: None,
+        })
+    );
+
+    assert_eq!(
+        config.project_type,
+        TypeConfig::Actor(ActorConfig {
+            claims: vec!["wasmcloud:httpserver".to_string()],
+            registry: None,
+            push_insecure: false,
+            key_directory: PathBuf::from("./keys"),
+            filename: None,
+            wasm_target: "wasm32-unknown-unknown".to_string(),
+            call_alias: None
+        })
+    );
+
+    assert_eq!(
+        config.common,
+        CommonConfig {
+            name: "testactor".to_string(),
+            version: Version::parse("0.1.0").unwrap(),
+        }
+    )
+}
