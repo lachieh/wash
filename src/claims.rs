@@ -23,7 +23,7 @@ use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::json;
 use std::{
     collections::HashMap,
-    fs::File,
+    fs::{self, File},
     io::{Read, Write},
     path::PathBuf,
 };
@@ -609,18 +609,10 @@ pub(crate) fn sign_file(cmd: SignCommand, output_kind: OutputKind) -> Result<Com
     let destination = match cmd.destination.clone() {
         Some(d) => d,
         None => {
-            let path = PathBuf::from(cmd.source.clone())
-                .parent()
-                .unwrap()
-                .to_str()
-                .unwrap()
-                .to_string();
-            let module_name = PathBuf::from(cmd.source.clone())
-                .file_stem()
-                .unwrap()
-                .to_str()
-                .unwrap()
-                .to_string();
+            let path_buf = PathBuf::from(cmd.source.clone());
+
+            let path = path_buf.parent().unwrap().to_str().unwrap().to_string();
+            let module_name = path_buf.file_stem().unwrap().to_str().unwrap().to_string();
             // If path is empty, user supplied module in current directory
             if path.is_empty() {
                 format!("./{}_s.wasm", module_name)
@@ -630,7 +622,13 @@ pub(crate) fn sign_file(cmd: SignCommand, output_kind: OutputKind) -> Result<Com
         }
     };
 
-    let mut outfile = File::create(&destination).unwrap();
+    let destination_path = PathBuf::from(destination.clone());
+
+    if let Some(p) = destination_path.parent() {
+        fs::create_dir_all(p)?;
+    }
+
+    let mut outfile = File::create(destination_path).unwrap();
 
     let output = match outfile.write(&signed) {
         Ok(_) => {
