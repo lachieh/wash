@@ -85,12 +85,14 @@ fn build_actor(
     common_config: CommonConfig,
 ) -> Result<CommandOutput> {
     // build it
+    println!("Building actor...");
     let file_path = match language_config {
         LanguageConfig::Rust(rust_config) => {
             build_rust_actor(rust_config, actor_config.clone(), common_config.clone())
         }
         LanguageConfig::TinyGo(tinygo_config) => build_tinygo(tinygo_config),
     }?;
+    println!("Done building actor");
 
     // sign it
 
@@ -101,7 +103,7 @@ fn build_actor(
 
     let sign_options = SignCommand {
         source: file_path_string,
-        destination: Some("todo".to_string()),
+        destination: Some(format!("build/{}_s.wasm", common_config.name)),
         metadata: ActorMetadata {
             name: common_config.name,
             ver: Some(common_config.version.to_string()),
@@ -110,14 +112,14 @@ fn build_actor(
             ..Default::default()
         },
     };
-
+    println!("Signing actor...");
     let sign_output = sign_file(sign_options, output_kind)?;
+
+    Ok(sign_output)
 
     // push it
 
     // bop it
-
-    todo!()
 }
 
 fn build_provider(
