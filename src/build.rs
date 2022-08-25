@@ -1,3 +1,5 @@
+use std::{path::PathBuf, process};
+
 use crate::{
     claims::{sign_file, ActorMetadata, SignCommand},
     util::{CommandOutput, OutputKind},
@@ -12,7 +14,10 @@ use wash_lib::parser::{
 /// Build (and sign) a wasmCloud actor, provider, or interface
 #[derive(Debug, Parser, Clone)]
 #[clap(name = "build")]
-pub(crate) struct BuildCli {}
+pub(crate) struct BuildCli {
+    // If true, pushes the signed actor to the registry.
+    push: bool,
+}
 
 pub(crate) fn handle_command(command: BuildCli, output_kind: OutputKind) -> Result<CommandOutput> {
     let config = wash_lib::parser::get_config(None, Some(true))?;
@@ -43,19 +48,23 @@ pub(crate) fn handle_command(command: BuildCli, output_kind: OutputKind) -> Resu
 }
 
 fn build_rust_actor(
+    common_config: CommonConfig,
     rust_config: RustConfig,
     actor_config: ActorConfig,
-    common_config: CommonConfig,
 ) -> Result<PathBuf> {
     let result = process::Command::new("cargo")
         .args(["build", "--release"])
         .status()?;
 
+    if !result.success() {
+        bail!("Compiling actor failed: {}", result.to_string())
+    }
+
     let wasm_file = PathBuf::from(format!(
         "{}/{}/release/{}.wasm",
         rust_config
             .target_path
-            .unwrap_or(PathBuf::from("target"))
+            .unwrap_or_else(|| PathBuf::from("target"))
             .to_string_lossy(),
         actor_config.wasm_target,
         common_config.name,
@@ -71,8 +80,37 @@ fn build_rust_actor(
     Ok(wasm_file)
 }
 
-fn build_tinygo(tinygo_config: TinyGoConfig) -> Result<PathBuf> {
-    todo!()
+fn build_tinygo_actor(common_config: CommonConfig, tinygo_config: TinyGoConfig) -> Result<PathBuf> {
+    let filename = format!("build/{}.wasm", common_config.name);
+
+    let result = process::Command::new("tinygo")
+        .args([
+            "build",
+            "-o",
+            filename.as_str(),
+            "-target",
+            "wasm",
+            "-scheduler",
+            "none",
+            "-no-debug",
+            ".",
+        ])
+        .status()?;
+
+    if !result.success() {
+        bail!("Compiling actor failed: {}", result.to_string())
+    }
+
+    let wasm_file = PathBuf::from(filename);
+
+    if !wasm_file.exists() {
+        bail!(
+            "Could not find compiled wasm file to sign: {}",
+            wasm_file.display()
+        );
+    }
+
+    Ok(wasm_file)
 }
 
 fn build_actor(
@@ -86,14 +124,16 @@ fn build_actor(
     println!("Building actor...");
     let file_path = match language_config {
         LanguageConfig::Rust(rust_config) => {
-            build_rust_actor(rust_config, actor_config.clone(), common_config.clone())
+            build_rust_actor(common_config.clone(), rust_config, actor_config.clone())
         }
-        LanguageConfig::TinyGo(tinygo_config) => build_tinygo(tinygo_config),
+        LanguageConfig::TinyGo(tinygo_config) => {
+            build_tinygo_actor(common_config.clone(), tinygo_config)
+        }
     }?;
     println!("Done building actor");
 
     // sign it
-
+    println!("Signing actor...");
     let file_path_string = file_path
         .to_str()
         .ok_or_else(|| anyhow!("Could not convert file path to string"))?
@@ -110,10 +150,13 @@ fn build_actor(
             ..Default::default()
         },
     };
-    println!("Signing actor...");
     let sign_output = sign_file(sign_options, output_kind)?;
 
-    Ok(sign_output)
+    if !command.push {
+        return Ok(sign_output);
+    }
+
+    println!("Signed actor: {}", sign_output.text);
 
     // push it
 
