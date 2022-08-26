@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use anyhow::Result;
 use app::AppCliCommand;
-use build::BuildCli;
+use build::BuildCommand;
 use call::CallCli;
 use claims::ClaimsCliCommand;
 use clap::{Parser, Subcommand};
@@ -73,7 +73,7 @@ enum CliCommand {
     App(AppCliCommand),
     /// Build (and sign) a wasmCloud actor, provider, or interface
     #[clap(name = "build")]
-    Build(BuildCli),
+    Build(BuildCommand),
     /// Invoke a wasmCloud actor
     #[clap(name = "call")]
     Call(CallCli),

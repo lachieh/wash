@@ -14,13 +14,16 @@ use wash_lib::parser::{
 /// Build (and sign) a wasmCloud actor, provider, or interface
 #[derive(Debug, Parser, Clone)]
 #[clap(name = "build")]
-pub(crate) struct BuildCli {
+pub(crate) struct BuildCommand {
     // If true, pushes the signed actor to the registry.
-    #[clap(short = 'p', long = "push", default_value = "false")]
-    push: bool,
+    #[clap(short = 'p', long = "push")]
+    pub(crate) push: bool,
 }
 
-pub(crate) fn handle_command(command: BuildCli, output_kind: OutputKind) -> Result<CommandOutput> {
+pub(crate) fn handle_command(
+    command: BuildCommand,
+    output_kind: OutputKind,
+) -> Result<CommandOutput> {
     let config = wash_lib::parser::get_config(None, Some(true))?;
 
     match config.project_type {
@@ -49,7 +52,7 @@ pub(crate) fn handle_command(command: BuildCli, output_kind: OutputKind) -> Resu
 }
 
 fn build_actor(
-    command: BuildCli,
+    command: BuildCommand,
     output_kind: OutputKind,
     actor_config: ActorConfig,
     language_config: LanguageConfig,
@@ -186,11 +189,11 @@ pub fn build_tinygo_actor(
 }
 
 fn build_provider(
-    command: BuildCli,
-    output_kind: OutputKind,
-    provider_config: ProviderConfig,
-    language_config: LanguageConfig,
-    common_config: CommonConfig,
+    _command: BuildCommand,
+    _output_kind: OutputKind,
+    _provider_config: ProviderConfig,
+    _language_config: LanguageConfig,
+    _common_config: CommonConfig,
 ) -> Result<CommandOutput> {
     Ok(CommandOutput::from_key_and_text(
         "result",
@@ -200,11 +203,11 @@ fn build_provider(
 }
 
 fn build_interface(
-    command: BuildCli,
-    output_kind: OutputKind,
-    interface_config: InterfaceConfig,
-    language_config: LanguageConfig,
-    common_config: CommonConfig,
+    _command: BuildCommand,
+    _output_kind: OutputKind,
+    _interface_config: InterfaceConfig,
+    _language_config: LanguageConfig,
+    _common_config: CommonConfig,
 ) -> Result<CommandOutput> {
     Ok(CommandOutput::from_key_and_text(
         "result",
@@ -215,43 +218,16 @@ fn build_interface(
 
 #[cfg(test)]
 mod test {
-    use std::env::temp_dir;
 
-    use anyhow::Result;
+    use super::*;
+    use clap::Parser;
 
-    use tokio::fs::{create_dir_all, remove_dir_all};
+    #[test]
+    fn test_build_comprehensive() {
+        let cmd: BuildCommand = Parser::try_parse_from(&["build", "--push"]).unwrap();
+        assert!(cmd.push);
 
-    use crate::{
-        build::{handle_command, BuildCli},
-        generate::{self, NewProjectArgs},
-        util::OutputKind,
-    };
-
-    #[tokio::test]
-    async fn can_build_rust_actor() -> Result<()> {
-        let test_dir = temp_dir().join("can_build_rust_actor");
-        let _ = remove_dir_all(&test_dir).await;
-        create_dir_all(&test_dir).await?;
-
-        std::env::set_current_dir(&test_dir)?;
-
-        generate::handle_command(generate::NewCliCommand::Actor(NewProjectArgs {
-            project_name: Some("hello".to_string()),
-            template_name: Some("hello".to_string()),
-            git: Some("wasmcloud/project-templates".to_string()),
-            subfolder: Some("actor/hello-build".into()),
-            no_git_init: true,
-            silent: true,
-            ..Default::default()
-        }))?;
-
-        println!("{}", test_dir.display());
-
-        handle_command(BuildCli { push: false }, OutputKind::Text);
-
-        // assert!(!is_nats_installed(&install_dir).await);
-
-        // let _ = remove_dir_all(&test_dir).await;
-        Ok(())
+        let cmd: BuildCommand = Parser::try_parse_from(&["build"]).unwrap();
+        assert!(!cmd.push);
     }
 }
