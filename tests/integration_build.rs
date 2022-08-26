@@ -17,7 +17,7 @@ fn build_rust_actor() -> Result<()> {
 
     std::env::set_current_dir(&test_dir)?;
 
-    wash()
+    let status = wash()
         .args(&[
             "new",
             "actor",
@@ -29,15 +29,19 @@ fn build_rust_actor() -> Result<()> {
             "--silent",
             "--no-git-init",
         ])
-        .output()
+        .status()
         .expect("Failed to generate project");
+
+    assert!(status.success());
 
     std::env::set_current_dir(&test_dir.join("hello"))?;
 
-    wash()
+    let status = wash()
         .args(&["build", "--no-sign"])
-        .output()
+        .status()
         .expect("Failed to build project");
+
+    assert!(status.success());
 
     let unsigned_file = test_dir.join("hello/build/hello.wasm");
     assert!(unsigned_file.exists(), "unsigned file not found!");
@@ -62,7 +66,7 @@ fn build_and_sign_rust_actor() -> Result<()> {
 
     std::env::set_current_dir(&test_dir)?;
 
-    wash()
+    let status = wash()
         .args(&[
             "new",
             "actor",
@@ -74,15 +78,19 @@ fn build_and_sign_rust_actor() -> Result<()> {
             "--silent",
             "--no-git-init",
         ])
-        .output()
+        .status()
         .expect("Failed to generate project");
+
+    assert!(status.success());
 
     std::env::set_current_dir(&test_dir.join("hello"))?;
 
-    wash()
+    let status = wash()
         .args(&["build"])
-        .output()
+        .status()
         .expect("Failed to build project");
+
+    assert!(status.success());
 
     let unsigned_file = test_dir.join("hello/build/hello.wasm");
     assert!(unsigned_file.exists(), "unsigned file not found!");
@@ -103,7 +111,7 @@ fn build_and_sign_tinygo_actor() -> Result<()> {
 
     std::env::set_current_dir(&test_dir)?;
 
-    wash()
+    let status = wash()
         .args(&[
             "new",
             "actor",
@@ -117,6 +125,8 @@ fn build_and_sign_tinygo_actor() -> Result<()> {
         ])
         .status()
         .expect("Failed to generate project");
+
+    assert!(status.success());
 
     std::env::set_current_dir(&test_dir.join("echo"))?;
 
