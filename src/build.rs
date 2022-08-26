@@ -1,4 +1,4 @@
-use std::{path::PathBuf, process};
+use std::{collections::HashMap, fs, path::PathBuf, process};
 
 use crate::{
     claims::{sign_file, ActorMetadata, SignCommand},
@@ -6,6 +6,7 @@ use crate::{
 };
 use anyhow::{anyhow, bail, Result};
 use clap::Parser;
+use serde_json::json;
 use wash_lib::parser::{
     ActorConfig, CommonConfig, InterfaceConfig, LanguageConfig, ProviderConfig, RustConfig,
     TinyGoConfig, TypeConfig,
@@ -15,9 +16,13 @@ use wash_lib::parser::{
 #[derive(Debug, Parser, Clone)]
 #[clap(name = "build")]
 pub(crate) struct BuildCommand {
-    // If true, pushes the signed actor to the registry.
+    // If set, pushes the signed actor to the registry.
     #[clap(short = 'p', long = "push")]
     pub(crate) push: bool,
+
+    // If set, skips signing the actor. Cannot be used with --push, as an actor has to be signed to push it to the registry.
+    #[clap(long = "no-sign", conflicts_with = "push")]
+    pub(crate) no_sign: bool,
 }
 
 pub(crate) fn handle_command(
@@ -69,6 +74,16 @@ fn build_actor(
         }
     }?;
     println!("Done building actor");
+
+    if command.no_sign {
+        let mut hash_map = HashMap::new();
+        hash_map.insert("file".to_string(), json!(file_path.display().to_string()));
+
+        return Ok(CommandOutput::new(
+            format!("Unsigned actor built at {}", file_path.display()),
+            hash_map,
+        ));
+    }
 
     // sign it
     println!("Signing actor...");
@@ -139,9 +154,9 @@ pub fn build_rust_actor(
 
     // move the file out into the build/ folder for parity with tinygo and convienience for users.
     let copied_wasm_file = PathBuf::from(format!("build/{}.wasm", common_config.name));
-    std::fs::create_dir_all(copied_wasm_file.parent().unwrap())?;
-    std::fs::copy(&wasm_file, &copied_wasm_file)?;
-    std::fs::remove_file(&wasm_file)?;
+    fs::create_dir_all(copied_wasm_file.parent().unwrap())?;
+    fs::copy(&wasm_file, &copied_wasm_file)?;
+    fs::remove_file(&wasm_file)?;
 
     Ok(copied_wasm_file)
 }
@@ -157,6 +172,8 @@ pub fn build_tinygo_actor(
         Some(path) => process::Command::new(path),
         None => process::Command::new("tinygo"),
     };
+
+    fs::create_dir_all(PathBuf::from(&filename).parent().unwrap())?;
 
     let result = command
         .args([
@@ -211,7 +228,7 @@ fn build_interface(
 ) -> Result<CommandOutput> {
     Ok(CommandOutput::from_key_and_text(
         "result",
-        "wash build has not be implemented for interface yet. Please use the Makefiles for now!"
+        "wash build has not be implemented for interfaces yet. Please use the Makefiles for now!"
             .to_string(),
     ))
 }
@@ -227,7 +244,11 @@ mod test {
         let cmd: BuildCommand = Parser::try_parse_from(&["build", "--push"]).unwrap();
         assert!(cmd.push);
 
+        let cmd: BuildCommand = Parser::try_parse_from(&["build", "--no-sign"]).unwrap();
+        assert!(cmd.no_sign);
+
         let cmd: BuildCommand = Parser::try_parse_from(&["build"]).unwrap();
         assert!(!cmd.push);
+        assert!(!cmd.no_sign);
     }
 }
