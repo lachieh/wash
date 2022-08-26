@@ -16,6 +16,7 @@ use wash_lib::parser::{
 #[clap(name = "build")]
 pub(crate) struct BuildCli {
     // If true, pushes the signed actor to the registry.
+    #[clap(short = 'p', long = "push", default_value = "false")]
     push: bool,
 }
 
@@ -45,72 +46,6 @@ pub(crate) fn handle_command(command: BuildCli, output_kind: OutputKind) -> Resu
             config.common,
         ),
     }
-}
-
-fn build_rust_actor(
-    common_config: CommonConfig,
-    rust_config: RustConfig,
-    actor_config: ActorConfig,
-) -> Result<PathBuf> {
-    let result = process::Command::new("cargo")
-        .args(["build", "--release"])
-        .status()?;
-
-    if !result.success() {
-        bail!("Compiling actor failed: {}", result.to_string())
-    }
-
-    let wasm_file = PathBuf::from(format!(
-        "{}/{}/release/{}.wasm",
-        rust_config
-            .target_path
-            .unwrap_or_else(|| PathBuf::from("target"))
-            .to_string_lossy(),
-        actor_config.wasm_target,
-        common_config.name,
-    ));
-
-    if !wasm_file.exists() {
-        bail!(
-            "Could not find compiled wasm file to sign: {}",
-            wasm_file.display()
-        );
-    }
-
-    Ok(wasm_file)
-}
-
-fn build_tinygo_actor(common_config: CommonConfig, tinygo_config: TinyGoConfig) -> Result<PathBuf> {
-    let filename = format!("build/{}.wasm", common_config.name);
-
-    let result = process::Command::new("tinygo")
-        .args([
-            "build",
-            "-o",
-            filename.as_str(),
-            "-target",
-            "wasm",
-            "-scheduler",
-            "none",
-            "-no-debug",
-            ".",
-        ])
-        .status()?;
-
-    if !result.success() {
-        bail!("Compiling actor failed: {}", result.to_string())
-    }
-
-    let wasm_file = PathBuf::from(filename);
-
-    if !wasm_file.exists() {
-        bail!(
-            "Could not find compiled wasm file to sign: {}",
-            wasm_file.display()
-        );
-    }
-
-    Ok(wasm_file)
 }
 
 fn build_actor(
@@ -158,11 +93,96 @@ fn build_actor(
 
     println!("Signed actor: {}", sign_output.text);
 
-    todo!()
-
     // push it
+    Ok(CommandOutput::from_key_and_text(
+        "result",
+        "Pushing has not be implemented yet, please use wash reg push.".to_string(),
+    ))
+}
 
-    // bop it
+/// Builds a rust actor and returns the path to the file.
+pub fn build_rust_actor(
+    common_config: CommonConfig,
+    rust_config: RustConfig,
+    actor_config: ActorConfig,
+) -> Result<PathBuf> {
+    let mut command = match rust_config.cargo_path {
+        Some(path) => process::Command::new(path),
+        None => process::Command::new("cargo"),
+    };
+
+    let result = command.args(["build", "--release"]).status()?;
+
+    if !result.success() {
+        bail!("Compiling actor failed: {}", result.to_string())
+    }
+
+    let wasm_file = PathBuf::from(format!(
+        "{}/{}/release/{}.wasm",
+        rust_config
+            .target_path
+            .unwrap_or_else(|| PathBuf::from("target"))
+            .to_string_lossy(),
+        actor_config.wasm_target,
+        common_config.name,
+    ));
+
+    if !wasm_file.exists() {
+        bail!(
+            "Could not find compiled wasm file to sign: {}",
+            wasm_file.display()
+        );
+    }
+
+    // move the file out into the build/ folder for parity with tinygo and convienience for users.
+    let copied_wasm_file = PathBuf::from(format!("build/{}.wasm", common_config.name));
+    std::fs::create_dir_all(copied_wasm_file.parent().unwrap())?;
+    std::fs::copy(&wasm_file, &copied_wasm_file)?;
+    std::fs::remove_file(&wasm_file)?;
+
+    Ok(copied_wasm_file)
+}
+
+/// Builds a tinygo actor and returns the path to the file.
+pub fn build_tinygo_actor(
+    common_config: CommonConfig,
+    tinygo_config: TinyGoConfig,
+) -> Result<PathBuf> {
+    let filename = format!("build/{}.wasm", common_config.name);
+
+    let mut command = match tinygo_config.tinygo_path {
+        Some(path) => process::Command::new(path),
+        None => process::Command::new("tinygo"),
+    };
+
+    let result = command
+        .args([
+            "build",
+            "-o",
+            filename.as_str(),
+            "-target",
+            "wasm",
+            "-scheduler",
+            "none",
+            "-no-debug",
+            ".",
+        ])
+        .status()?;
+
+    if !result.success() {
+        bail!("Compiling actor failed: {}", result.to_string())
+    }
+
+    let wasm_file = PathBuf::from(filename);
+
+    if !wasm_file.exists() {
+        bail!(
+            "Could not find compiled wasm file to sign: {}",
+            wasm_file.display()
+        );
+    }
+
+    Ok(wasm_file)
 }
 
 fn build_provider(
@@ -172,7 +192,11 @@ fn build_provider(
     language_config: LanguageConfig,
     common_config: CommonConfig,
 ) -> Result<CommandOutput> {
-    todo!()
+    Ok(CommandOutput::from_key_and_text(
+        "result",
+        "wash build has not be implemented for providers yet. Please use the Makefiles for now!"
+            .to_string(),
+    ))
 }
 
 fn build_interface(
@@ -182,5 +206,52 @@ fn build_interface(
     language_config: LanguageConfig,
     common_config: CommonConfig,
 ) -> Result<CommandOutput> {
-    todo!()
+    Ok(CommandOutput::from_key_and_text(
+        "result",
+        "wash build has not be implemented for interface yet. Please use the Makefiles for now!"
+            .to_string(),
+    ))
+}
+
+#[cfg(test)]
+mod test {
+    use std::env::temp_dir;
+
+    use anyhow::Result;
+
+    use tokio::fs::{create_dir_all, remove_dir_all};
+
+    use crate::{
+        build::{handle_command, BuildCli},
+        generate::{self, NewProjectArgs},
+        util::OutputKind,
+    };
+
+    #[tokio::test]
+    async fn can_build_rust_actor() -> Result<()> {
+        let test_dir = temp_dir().join("can_build_rust_actor");
+        let _ = remove_dir_all(&test_dir).await;
+        create_dir_all(&test_dir).await?;
+
+        std::env::set_current_dir(&test_dir)?;
+
+        generate::handle_command(generate::NewCliCommand::Actor(NewProjectArgs {
+            project_name: Some("hello".to_string()),
+            template_name: Some("hello".to_string()),
+            git: Some("wasmcloud/project-templates".to_string()),
+            subfolder: Some("actor/hello-build".into()),
+            no_git_init: true,
+            silent: true,
+            ..Default::default()
+        }))?;
+
+        println!("{}", test_dir.display());
+
+        handle_command(BuildCli { push: false }, OutputKind::Text);
+
+        // assert!(!is_nats_installed(&install_dir).await);
+
+        // let _ = remove_dir_all(&test_dir).await;
+        Ok(())
+    }
 }
