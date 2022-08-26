@@ -16,11 +16,11 @@ use wash_lib::parser::{
 #[derive(Debug, Parser, Clone)]
 #[clap(name = "build")]
 pub(crate) struct BuildCommand {
-    // If set, pushes the signed actor to the registry.
+    /// If set, pushes the signed actor to the registry.
     #[clap(short = 'p', long = "push")]
     pub(crate) push: bool,
 
-    // If set, skips signing the actor. Cannot be used with --push, as an actor has to be signed to push it to the registry.
+    /// If set, skips signing the actor. Cannot be used with --push, as an actor has to be signed to push it to the registry.
     #[clap(long = "no-sign", conflicts_with = "push")]
     pub(crate) no_sign: bool,
 }

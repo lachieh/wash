@@ -58,7 +58,7 @@ fn build_rust_actor() -> Result<()> {
 
 #[test]
 fn build_and_sign_rust_actor() -> Result<()> {
-    const SUBFOLDER: &str = "build_rust_actor";
+    const SUBFOLDER: &str = "build_and_sign_rust_actor";
 
     let test_dir = temp_dir().join(SUBFOLDER);
     let _ = remove_dir_all(&test_dir);
@@ -104,7 +104,7 @@ fn build_and_sign_rust_actor() -> Result<()> {
 
 #[test]
 fn build_and_sign_tinygo_actor() -> Result<()> {
-    const SUBFOLDER: &str = "build_tinygo_actor";
+    const SUBFOLDER: &str = "build_and_sign_tinygo_actor";
     let test_dir = temp_dir().join(SUBFOLDER);
     let _ = remove_dir_all(&test_dir);
     create_dir_all(&test_dir)?;
