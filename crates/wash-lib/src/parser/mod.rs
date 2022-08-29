@@ -32,30 +32,30 @@ pub struct ProjectConfig {
 
 #[derive(serde::Deserialize, Debug, PartialEq, Clone, Default)]
 pub struct ActorConfig {
-    /// The list of provider claims that this actor requires. eg. ["wasmcloud:httpserver"]
+    /// The list of provider claims that this actor requires. eg. ["wasmcloud:httpserver", "wasmcloud:blobstore"]
     pub claims: Vec<String>,
     /// The registry to push to. eg. "localhost:8080"
     pub registry: Option<String>,
     /// Whether to push to the registry insecurely. Defaults to false.
     pub push_insecure: bool,
-    /// The directory to store the private keys in.
+    /// The directory to store the private signing keys in.
     pub key_directory: PathBuf,
     /// The filename of the signed wasm actor.
     pub filename: Option<String>,
-    /// The target wasm target to build for.
+    /// The target wasm target to build for. Defaults to "wasm32-unknown-unknown".
     pub wasm_target: String,
     /// The call alias of the actor.
     pub call_alias: Option<String>,
 }
 #[derive(serde::Deserialize, Debug, PartialEq)]
 struct RawActorConfig {
-    /// The list of provider claims that this actor requires. eg. ["wasmcloud:httpserver"]
+    /// The list of provider claims that this actor requires. eg. ["wasmcloud:httpserver", "wasmcloud:blobstore"]
     pub claims: Option<Vec<String>>,
     /// The registry to push to. eg. "localhost:8080"
     pub registry: Option<String>,
     /// Whether to push to the registry insecurely. Defaults to false.
     pub push_insecure: Option<bool>,
-    /// The directory to store the private keys in. Defaults to "./keys".
+    /// The directory to store the private signing keys in. Defaults to "./keys".
     pub key_directory: Option<PathBuf>,
     /// The filename of the signed wasm actor.
     pub filename: Option<String>,
@@ -143,7 +143,7 @@ impl TryFrom<RawInterfaceConfig> for InterfaceConfig {
 
 #[derive(serde::Deserialize, Debug, PartialEq, Clone, Default)]
 pub struct RustConfig {
-    /// The path to the cargo binary. Optional, will default to the default `cargo` if not specified.
+    /// The path to the cargo binary. Optional, will default to search the user's `PATH` for `cargo` if not specified.
     pub cargo_path: Option<PathBuf>,
     /// Path to cargo/rust's `target` directory. Optional, defaults to `./target`.
     pub target_path: Option<PathBuf>,
@@ -151,7 +151,7 @@ pub struct RustConfig {
 #[derive(serde::Deserialize, Debug, PartialEq, Default, Clone)]
 
 struct RawRustConfig {
-    /// The path to the cargo binary. Optional, will default to the default `cargo` if not specified.
+    /// The path to the cargo binary. Optional, will default to search the user's `PATH` for `cargo` if not specified.
     pub cargo_path: Option<PathBuf>,
     /// Path to cargo/rust's `target` directory. Optional, defaults to `./target`.
     pub target_path: Option<PathBuf>,
@@ -280,7 +280,12 @@ impl TryFrom<RawProjectConfig> for ProjectConfig {
     type Error = anyhow::Error;
 
     fn try_from(raw_project_config: RawProjectConfig) -> Result<Self> {
-        let project_type_config = match raw_project_config.project_type.as_str() {
+        let project_type_config = match raw_project_config
+            .project_type
+            .trim()
+            .to_lowercase()
+            .as_str()
+        {
             "actor" => {
                 let actor_config = raw_project_config
                     .actor
@@ -310,7 +315,7 @@ impl TryFrom<RawProjectConfig> for ProjectConfig {
             }
         };
 
-        let language_config = match raw_project_config.language.as_str() {
+        let language_config = match raw_project_config.language.trim().to_lowercase().as_str() {
             "rust" => match raw_project_config.rust {
                 Some(rust_config) => LanguageConfig::Rust(rust_config.try_into()?),
                 None => LanguageConfig::Rust(RustConfig::default()),

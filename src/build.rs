@@ -214,7 +214,7 @@ fn build_provider(
 ) -> Result<CommandOutput> {
     Ok(CommandOutput::from_key_and_text(
         "result",
-        "wash build has not be implemented for providers yet. Please use the Makefiles for now!"
+        "wash build has not be implemented for providers yet. Please use `make` for now!"
             .to_string(),
     ))
 }
@@ -228,7 +228,7 @@ fn build_interface(
 ) -> Result<CommandOutput> {
     Ok(CommandOutput::from_key_and_text(
         "result",
-        "wash build has not be implemented for interfaces yet. Please use the Makefiles for now!"
+        "wash build has not be implemented for interfaces yet. Please use `make` for now!"
             .to_string(),
     ))
 }
