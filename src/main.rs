@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, env, path::PathBuf};
 
 use anyhow::Result;
 use app::AppCliCommand;
@@ -6,6 +6,7 @@ use build::BuildCommand;
 use call::CallCli;
 use claims::ClaimsCliCommand;
 use clap::{Parser, Subcommand};
+use cli_test::TestCommand;
 use ctl::CtlCliCommand;
 use ctx::CtxCommand;
 use drain::DrainSelection;
@@ -26,6 +27,7 @@ mod build;
 mod call;
 mod cfg;
 mod claims;
+mod cli_test;
 mod ctl;
 mod ctx;
 mod drain;
@@ -60,6 +62,15 @@ struct Cli {
         global = true
     )]
     pub(crate) output: OutputKind,
+
+    #[clap(
+        short = 'd',
+        name = "dir",
+        long = "directory",
+        help = "Specify the directory to use for the command",
+        global = true
+    )]
+    pub(crate) directory: Option<String>,
 
     #[clap(subcommand)]
     command: CliCommand,
@@ -107,6 +118,9 @@ enum CliCommand {
     /// Interact with OCI compliant registries
     #[clap(name = "reg", subcommand)]
     Reg(RegCliCommand),
+    /// Test the current wasmCloud project.
+    #[clap(name = "test")]
+    Test(TestCommand),
     /// Bootstrap a wasmCloud environment
     #[clap(name = "up")]
     Up(UpCommand),
@@ -122,6 +136,13 @@ async fn main() {
 
     let output_kind = cli.output;
 
+    if let Some(dir) = cli.directory {
+        if let Err(e) = env::set_current_dir(PathBuf::from(dir)) {
+            eprintln!("{}", e);
+            std::process::exit(1);
+        }
+    }
+
     let res: Result<CommandOutput> = match cli.command {
         CliCommand::App(app_cli) => app::handle_command(app_cli, output_kind).await,
         CliCommand::Build(build_cli) => build::handle_command(build_cli, output_kind),
@@ -136,6 +157,7 @@ async fn main() {
         CliCommand::New(new_cli) => generate::handle_command(new_cli),
         CliCommand::Par(par_cli) => par::handle_command(par_cli, output_kind).await,
         CliCommand::Reg(reg_cli) => reg::handle_command(reg_cli, output_kind).await,
+        CliCommand::Test(test_cli) => cli_test::handle_command(test_cli),
         CliCommand::Up(up_cli) => up::handle_command(up_cli, output_kind).await,
         CliCommand::Validate(validate_cli) => smithy::handle_validate_command(validate_cli).await,
     };
@@ -184,4 +206,11 @@ async fn main() {
             1
         }
     })
+}
+
+#[cfg(test)]
+mod test {
+
+    #[tokio::test]
+    async fn test_main() {}
 }

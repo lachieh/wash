@@ -124,10 +124,7 @@ pub fn build_rust_actor(
     rust_config: RustConfig,
     actor_config: ActorConfig,
 ) -> Result<PathBuf> {
-    let mut command = match rust_config.cargo_path {
-        Some(path) => process::Command::new(path),
-        None => process::Command::new("cargo"),
-    };
+    let mut command = rust_config.cargo();
 
     let result = command.args(["build", "--release"]).status()?;
 
@@ -168,10 +165,7 @@ pub fn build_tinygo_actor(
 ) -> Result<PathBuf> {
     let filename = format!("build/{}.wasm", common_config.name);
 
-    let mut command = match tinygo_config.tinygo_path {
-        Some(path) => process::Command::new(path),
-        None => process::Command::new("tinygo"),
-    };
+    let mut command = tinygo_config.tinygo();
 
     fs::create_dir_all(PathBuf::from(&filename).parent().unwrap())?;
 

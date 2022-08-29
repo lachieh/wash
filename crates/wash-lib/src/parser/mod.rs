@@ -1,7 +1,7 @@
 use anyhow::{anyhow, Result};
 use config::Config;
 use semver::Version;
-use std::{fs, path::PathBuf};
+use std::{fs, path::PathBuf, process};
 
 #[derive(serde::Deserialize, Debug, PartialEq, Clone)]
 #[serde(rename_all = "snake_case")]
@@ -148,6 +148,17 @@ pub struct RustConfig {
     /// Path to cargo/rust's `target` directory. Optional, defaults to `./target`.
     pub target_path: Option<PathBuf>,
 }
+
+impl RustConfig {
+    /// Gets the cargo binary from the config, or if not provided gets cargo from the user's PATH.
+    /// Creates a new `process::Command` using that binary.
+    pub fn cargo(&self) -> process::Command {
+        match &self.cargo_path {
+            Some(path) => process::Command::new(path),
+            None => process::Command::new("cargo"),
+        }
+    }
+}
 #[derive(serde::Deserialize, Debug, PartialEq, Default, Clone)]
 
 struct RawRustConfig {
@@ -200,6 +211,17 @@ struct RawProjectConfig {
 pub struct TinyGoConfig {
     /// The path to the tinygo binary. Optional, will default to `tinygo` if not specified.
     pub tinygo_path: Option<PathBuf>,
+}
+
+impl TinyGoConfig {
+    /// Gets the tinygo binary from the config, or if not provided gets tinygo from the user's PATH.
+    /// Creates a new `process::Command` using that binary.
+    pub fn tinygo(&self) -> process::Command {
+        match &self.tinygo_path {
+            Some(path) => process::Command::new(path),
+            None => process::Command::new("tinygo"),
+        }
+    }
 }
 
 #[derive(serde::Deserialize, Debug, PartialEq, Default)]
