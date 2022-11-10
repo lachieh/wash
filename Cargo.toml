@@ -16,7 +16,7 @@ maintenance = {status = "actively-developed"}
 
 [dependencies]
 anyhow = {version = "1.0.51", features = ["backtrace"]}
-async-nats = "0.18.0"
+async-nats = "0.22.0"
 atelier_core = "0.2"
 bytes = "1.0"
 cargo_atelier = "0.2"
@@ -59,8 +59,9 @@ which = "4.2.2"
 wash-lib = { version = "0.3.1", path = "./crates/wash-lib" }
 wascap = "0.8.0"
 weld-codegen = "0.5.0"
-wasmcloud-control-interface = "0.21.0"
-wasmbus-rpc = "0.10.0"
+wasmcloud-control-interface = { git = "https://github.com/wasmcloud/control-interface-client", rev = "8f5c6736bc9d2c76db2e795e119734fc2a9d3fd3" }
+wasmbus-rpc = { git = "https://github.com/wasmcloud/weld", rev="77f50ddd476e0b2a50915de6c4fb0f41e6e24c85" }
+
 wasmcloud-test-util = "0.5.0"
 
 [dev-dependencies]
