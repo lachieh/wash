@@ -122,3 +122,27 @@ fn can_stop_detached_host() {
 
     remove_dir_all(dir).unwrap();
 }
+
+#[test]
+#[serial]
+fn does_not_stop_nats_on_connect_only() {
+    let dir = test_dir_with_subfolder("does_not_stop_nats_on_connect_only");
+    let path = dir.join("washup.log");
+    let stdout = std::fs::File::create(&path).expect("could not create log file for wash up test");
+
+    let mut up_cmd = wash()
+        .args(["up", "--nats-port", "5895", "-o", "json", "--detached"])
+        .stdout(stdout)
+        .spawn()
+        .expect("Could not spawn wash up process");
+
+    let status = up_cmd.wait().expect("up command failed to complete");
+
+    assert!(status.success());
+    let out = read_to_string(&path).expect("could not read output of wash up");
+
+    let (kill_cmd, wasmcloud_log) = match serde_json::from_str::<serde_json::Value>(&out) {
+        Ok(v) => (v["kill_cmd"].to_owned(), v["wasmcloud_log"].to_owned()),
+        Err(_e) => panic!("Unable to parse kill cmd from wash up output"),
+    };
+}
