@@ -5,6 +5,7 @@ use std::os::unix::prelude::PermissionsExt;
 use std::path::{Path, PathBuf};
 use std::process::Stdio;
 use std::{ffi::OsStr, io::Cursor};
+use std::{thread, time};
 use tokio::fs::{create_dir_all, metadata, write, File};
 use tokio::process::{Child, Command};
 use tokio_stream::StreamExt;
@@ -309,7 +310,12 @@ jetstream {{
 /// * `bin_path` - Path to the nats-server binary to execute
 /// * `stderr` - Specify where NATS stderr logs should be written to. If logs aren't important, use std::process::Stdio::null()
 /// * `config` - Configuration for the NATS server, see [NatsConfig] for options. This config file is written alongside the nats-server binary as `nats.conf`
-pub async fn start_nats_server<P, T>(bin_path: P, stderr: T, config: NatsConfig) -> Result<Child>
+pub async fn start_nats_server<P, T>(
+    bin_path: P,
+    stderr: T,
+    config: NatsConfig,
+    kill_in_use: bool,
+) -> Result<Child>
 where
     P: AsRef<Path>,
     T: Into<Stdio>,
@@ -319,11 +325,27 @@ where
         .await
         .is_ok()
     {
-        return Err(anyhow!(
-            "Could not start NATS server, a process is already listening on {}:{}",
-            config.host,
-            config.port
-        ));
+        if !kill_in_use {
+            return Err(anyhow!(
+                "Could not start NATS server, a process is already listening on {}:{}. Use the --kill-in-use flag to kill the process listening on this port",
+                config.host,
+                config.port
+            ));
+        }
+
+        port_killer::kill(config.port)?;
+        // Port killing isn't an exact science. Wait a few seconds to ensure the port is free.
+        thread::sleep(time::Duration::from_secs(3));
+        if tokio::net::TcpStream::connect(format!("{}:{}", config.host, config.port))
+            .await
+            .is_ok()
+        {
+            return Err(anyhow!(
+                "Could not start NATS server, unable to kill process is already listening on {}:{}",
+                config.host,
+                config.port
+            ));
+        }
     }
     if let Some(parent_path) = bin_path.as_ref().parent() {
         let config_path = parent_path.join(NATS_SERVER_CONF);
@@ -420,8 +442,13 @@ mod test {
         let log_file = tokio::fs::File::create(&log_path).await?.into_std().await;
 
         let config = NatsConfig::new_standalone("127.0.0.1", 10000, None);
-        let child_res =
-            start_nats_server(&install_dir.join(NATS_SERVER_BINARY), log_file, config).await;
+        let child_res = start_nats_server(
+            &install_dir.join(NATS_SERVER_BINARY),
+            log_file,
+            config,
+            /* kill_in_use= */ true,
+        )
+        .await;
         assert!(child_res.is_ok());
 
         // Give NATS max 5 seconds to start up
@@ -461,6 +488,7 @@ mod test {
             &install_dir.join(NATS_SERVER_BINARY),
             std::process::Stdio::null(),
             config.clone(),
+            /* kill_in_use= */ true,
         )
         .await;
         assert!(nats_one.is_ok());
@@ -469,7 +497,13 @@ mod test {
         tokio::time::sleep(std::time::Duration::from_millis(5000)).await;
         let log_path = install_dir.join("nats.log");
         let log = std::fs::File::create(&log_path)?;
-        let nats_two = start_nats_server(&install_dir.join(NATS_SERVER_BINARY), log, config).await;
+        let nats_two = start_nats_server(
+            &install_dir.join(NATS_SERVER_BINARY),
+            log,
+            config,
+            /* kill_in_use= */ true,
+        )
+        .await;
         assert!(nats_two.is_err());
 
         nats_one.unwrap().kill().await?;

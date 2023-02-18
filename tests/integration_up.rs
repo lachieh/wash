@@ -12,7 +12,15 @@ fn integration_up_can_start_wasmcloud_and_actor() {
     let stdout = std::fs::File::create(&path).expect("could not create log file for wash up test");
 
     let mut up_cmd = wash()
-        .args(["up", "--nats-port", "5893", "-o", "json", "--detached"])
+        .args([
+            "up",
+            "--nats-port",
+            "5893",
+            "-o",
+            "json",
+            "--detached",
+            "--kill-in-use",
+        ])
         .stdout(stdout)
         .spawn()
         .expect("Could not spawn wash up process");
@@ -72,7 +80,15 @@ fn can_stop_detached_host() {
     let stdout = std::fs::File::create(&path).expect("could not create log file for wash up test");
 
     let mut up_cmd = wash()
-        .args(["up", "--nats-port", "5894", "-o", "json", "--detached"])
+        .args([
+            "up",
+            "--nats-port",
+            "5894",
+            "-o",
+            "json",
+            "--detached",
+            "--kill-in-use",
+        ])
         .stdout(stdout)
         .spawn()
         .expect("Could not spawn wash up process");

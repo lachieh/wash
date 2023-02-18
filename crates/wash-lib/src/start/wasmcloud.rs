@@ -4,6 +4,7 @@ use std::io::Cursor;
 use std::os::unix::prelude::PermissionsExt;
 use std::path::{Path, PathBuf};
 use std::process::Stdio;
+use std::{thread, time};
 
 use anyhow::{anyhow, Result};
 use async_compression::tokio::bufread::GzipDecoder;
@@ -224,6 +225,7 @@ pub async fn start_wasmcloud_host<P, T, S>(
     stdout: T,
     stderr: S,
     env_vars: HashMap<String, String>,
+    kill_in_use: bool,
 ) -> Result<Child>
 where
     P: AsRef<Path>,
@@ -239,10 +241,24 @@ where
         .await
         .is_ok()
     {
-        return Err(anyhow!(
-            "Could not start wasmCloud, a process is already listening on localhost:{}",
-            port
-        ));
+        if !kill_in_use {
+            return Err(anyhow!(
+                "Could not start wasmCloud, a process is already listening on localhost:{}. Use the --kill-in-use flag to kill the process listening on this port",
+                port
+            ));
+        }
+        port_killer::kill(port.parse::<u16>()?)?;
+        // Port killing isn't an exact science. Wait a few seconds to ensure the port is free.
+        thread::sleep(time::Duration::from_secs(3));
+        if tokio::net::TcpStream::connect(format!("localhost:{port}"))
+            .await
+            .is_ok()
+        {
+            return Err(anyhow!(
+                "Could not start wasmCloud, unable to kill process is already listening on localhost:{}",
+                port
+            ));
+        }
     }
 
     #[cfg(target_family = "unix")]
@@ -492,6 +508,7 @@ mod test {
             install_dir.join(NATS_SERVER_BINARY),
             std::process::Stdio::null(),
             config,
+            /* kill_in_use= */ true,
         )
         .await
         .expect("Unable to start nats process");
@@ -530,6 +547,7 @@ mod test {
             stdout_log_file,
             stderr_log_file,
             host_env,
+            /* kill_in_use= */ true,
         )
         .await
         .expect("Unable to start wasmcloud host");
@@ -562,6 +580,7 @@ mod test {
             std::process::Stdio::null(),
             std::process::Stdio::null(),
             host_env,
+            /* kill_in_use= */ true,
         )
         .await
         .expect_err("Starting a second process should error");
@@ -580,6 +599,7 @@ mod test {
                 std::process::Stdio::null(),
                 std::process::Stdio::null(),
                 host_env,
+                /* kill_in_use= */ true,
             )
             .await;
             assert!(child_res.is_err());

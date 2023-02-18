@@ -37,6 +37,10 @@ pub(crate) struct UpCommand {
     #[clap(short = 'd', long = "detached", alias = "detach")]
     pub(crate) detached: bool,
 
+    /// Kills any process currently using the NATS or wasmCloud ports.
+    #[clap(long = "kill-in-use", alias = "kill-port")]
+    pub(crate) kill_in_use: bool,
+
     #[clap(flatten)]
     pub(crate) nats_opts: NatsOpts,
 
@@ -267,7 +271,13 @@ pub(crate) async fn handle_up(cmd: UpCommand, output_kind: OutputKind) -> Result
         let nats_binary = ensure_nats_server(&cmd.nats_opts.nats_version, &install_dir).await?;
 
         spinner.update_spinner_message(" Starting NATS ...".to_string());
-        start_nats(&install_dir, &nats_binary, cmd.nats_opts.clone()).await?;
+        start_nats(
+            &install_dir,
+            &nats_binary,
+            cmd.nats_opts.clone(),
+            cmd.kill_in_use,
+        )
+        .await?;
         Some(nats_binary)
     } else {
         // If we can connect to NATS, return None as we aren't managing the child process.
@@ -314,6 +324,7 @@ pub(crate) async fn handle_up(cmd: UpCommand, output_kind: OutputKind) -> Result
         std::process::Stdio::null(),
         stderr,
         host_env,
+        cmd.kill_in_use,
     )
     .await
     {
@@ -377,7 +388,12 @@ pub(crate) async fn handle_up(cmd: UpCommand, output_kind: OutputKind) -> Result
 }
 
 /// Helper function to start the NATS binary, redirecting output to nats.log
-async fn start_nats(install_dir: &Path, nats_binary: &Path, nats_opts: NatsOpts) -> Result<Child> {
+async fn start_nats(
+    install_dir: &Path,
+    nats_binary: &Path,
+    nats_opts: NatsOpts,
+    kill_in_use: bool,
+) -> Result<Child> {
     // Ensure that leaf node remote connection can be established before launching NATS
     let nats_opts = match (
         nats_opts.nats_remote_url.as_ref(),
@@ -406,7 +422,7 @@ async fn start_nats(install_dir: &Path, nats_binary: &Path, nats_opts: NatsOpts)
         .await?
         .into_std()
         .await;
-    start_nats_server(nats_binary, nats_log_file, nats_opts.into()).await
+    start_nats_server(nats_binary, nats_log_file, nats_opts.into(), kill_in_use).await
 }
 
 /// Helper function to run wasmCloud in interactive mode
