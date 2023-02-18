@@ -556,6 +556,7 @@ mod tests {
             "v0.57.1",
             "--lattice-prefix",
             "anotherprefix",
+            "--kill-in-use",
         ])?;
         assert!(up_all_flags.wasmcloud_opts.allow_latest);
         assert_eq!(
@@ -648,7 +649,7 @@ mod tests {
         );
         assert_eq!(up_all_flags.wasmcloud_opts.provider_delay, 500);
         assert!(up_all_flags.detached);
-
+        assert!(up_all_flags.kill_in_use);
         Ok(())
     }
 }
