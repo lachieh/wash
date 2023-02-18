@@ -28,6 +28,7 @@
 //!         nats_binary,
 //!         nats_log_file,
 //!         config,
+//!         /* kill_in_use= */ true,
 //!     ).await?;
 //!     
 //!     // Download wasmCloud if not already installed
@@ -42,6 +43,7 @@
 //!         std::process::Stdio::null(),
 //!         log_file,
 //!         std::collections::HashMap::new(),
+//!         /* kill_in_use= */ true,
 //!     ).await?;
 //!
 //!     // Park thread, wasmCloud and NATS are running

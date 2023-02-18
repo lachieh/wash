@@ -501,7 +501,7 @@ mod test {
             &install_dir.join(NATS_SERVER_BINARY),
             log,
             config,
-            /* kill_in_use= */ true,
+            /* kill_in_use= */ false,
         )
         .await;
         assert!(nats_two.is_err());

@@ -580,7 +580,7 @@ mod test {
             std::process::Stdio::null(),
             std::process::Stdio::null(),
             host_env,
-            /* kill_in_use= */ true,
+            /* kill_in_use= */ false,
         )
         .await
         .expect_err("Starting a second process should error");
