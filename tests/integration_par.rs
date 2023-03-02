@@ -245,8 +245,15 @@ fn integration_par_inspect() {
             local_http_client_path.to_str().unwrap(),
         ])
         .output()
-        .expect("failed to pull https server for par inspect test");
-    assert!(get_http_client.status.success());
+        .expect("failed to pull httpclient for par inspect test");
+    assert!(
+        get_http_client.status.success(),
+        "Reg Pull failed: {get_http_client:?}"
+    );
+    assert!(
+        local_http_client_path.is_file(),
+        "Artifact file {local_http_client_path:?} does not exist. Reg Pull output: {get_http_client:?}"
+    );
     let push_echo = wash()
         .args([
             "reg",
@@ -338,7 +345,7 @@ fn integration_par_inspect_cached() {
     );
     assert!(
         http_client_cache_path.is_file(),
-        "Artifact file does not exist. Reg Pull output: {get_http_client:?}"
+        "Artifact file {http_client_cache_path:?} does not exist. Reg Pull output: {get_http_client:?}"
     );
 
     let remote_inspect = wash()
