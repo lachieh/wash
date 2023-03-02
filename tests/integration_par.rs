@@ -3,10 +3,11 @@ mod common;
 use crate::common::LOCAL_REGISTRY;
 use assert_json_diff::assert_json_include;
 use common::{get_json_output, output_to_string, test_dir_file, test_dir_with_subfolder, wash};
+use scopeguard::defer;
 use serde_json::json;
 use std::{
     env::temp_dir,
-    fs::{remove_dir_all, remove_file, File},
+    fs::{remove_dir_all, File},
     io::prelude::*,
 };
 
@@ -17,12 +18,13 @@ fn integration_create_and_insert() {
     const ISSUER: &str = "SAACTTUPKR55VUWUDK7GJ5SU5KGED455FR7BDO46RUVOTHUWKBLECLH2UU";
     const SUBJECT: &str = "SVAOZUSBWWFL65P255DOHIETPTXUQMM5ETLSYPITI5G4K4HI6M2CDAPWAU";
     let test_dir = test_dir_with_subfolder(SUBFOLDER);
+    defer! {
+        remove_dir_all(test_dir).unwrap();
+    }
     let pargz = test_dir_file(SUBFOLDER, "test.par.gz");
 
     integration_par_create(ISSUER, SUBJECT, pargz.to_str().unwrap());
     integration_par_insert(ISSUER, SUBJECT, pargz.to_str().unwrap());
-
-    remove_dir_all(test_dir).unwrap();
 }
 
 /// Tests creation of a provider archive file with an initial binary
@@ -30,6 +32,9 @@ fn integration_par_create(issuer: &str, subject: &str, archive: &str) {
     const ARCH: &str = "x86_64-linux";
     const SUBFOLDER: &str = "create_bin_folder";
     let bin_folder = test_dir_with_subfolder(SUBFOLDER);
+    defer! {
+        remove_dir_all(bin_folder).unwrap();
+    }
     let binary = test_dir_file(SUBFOLDER, "linux.so");
     let mut bin_file = File::create(binary.clone()).unwrap();
     bin_file.write_all(b"01100010 01110100 01110111").unwrap();
@@ -87,8 +92,6 @@ fn integration_par_create(issuer: &str, subject: &str, archive: &str) {
         "version": "3.2.1"
     });
     assert_json_include!(actual: output, expected: expected);
-
-    remove_dir_all(bin_folder).unwrap();
 }
 
 /// Tests inserting multiple binaries into an existing provider archive file
@@ -98,6 +101,9 @@ fn integration_par_insert(issuer: &str, subject: &str, archive: &str) {
     const ARCH2: &str = "aarch64-ios";
 
     let insert_dir = test_dir_with_subfolder(SUBFOLDER);
+    defer! {
+        remove_dir_all(insert_dir).unwrap();
+    }
 
     let bin1 = test_dir_file(SUBFOLDER, "android.so");
     let mut bin1_file = File::create(bin1.clone()).unwrap();
@@ -214,8 +220,6 @@ fn integration_par_insert(issuer: &str, subject: &str, archive: &str) {
     assert!(targets.contains(&ARCH1.to_string()));
     assert!(targets.contains(&ARCH2.to_string()));
     assert!(targets.contains(&"x86_64-linux".to_string()));
-
-    remove_dir_all(insert_dir).unwrap();
 }
 
 #[test]
@@ -225,6 +229,9 @@ fn integration_par_inspect() {
     const HTTP_ISSUER: &str = "ACOJJN6WUP4ODD75XEBKKTCCUJJCY5ZKQ56XVKYK4BEJWGVAOOQHZMCW";
     const HTTP_SERVICE: &str = "VCCVLH4XWGI3SGARFNYKYT2A32SUYA2KVAIV2U2Q34DQA7WWJPFRKIKM";
     let inspect_dir = test_dir_with_subfolder(SUBFOLDER);
+    defer! {
+        remove_dir_all(inspect_dir).unwrap();
+    }
     let httpclient_parinspect = &format!("{LOCAL_REGISTRY}/httpclient:parinspect");
 
     // Pull the echo module and push to local registry to test local inspect
@@ -297,8 +304,6 @@ fn integration_par_inspect() {
     assert!(remote_inspect.status.success());
     let remote_inspect_output = get_json_output(remote_inspect).unwrap();
     assert_json_include!(actual: remote_inspect_output, expected: inspect_expected);
-
-    remove_dir_all(inspect_dir).unwrap();
 }
 
 #[test]
@@ -309,8 +314,12 @@ fn integration_par_inspect_cached() {
     const HTTP_ISSUER: &str = "ACOJJN6WUP4ODD75XEBKKTCCUJJCY5ZKQ56XVKYK4BEJWGVAOOQHZMCW";
     const HTTP_SERVICE: &str = "VCCVLH4XWGI3SGARFNYKYT2A32SUYA2KVAIV2U2Q34DQA7WWJPFRKIKM";
 
-    let mut http_client_cache_path = temp_dir().join("wasmcloud_ocicache").join(HTTP_FAKE_CACHED);
+    let cache_dir = temp_dir().join("wasmcloud_ocicache");
+    let mut http_client_cache_path = cache_dir.join(HTTP_FAKE_CACHED);
     let _ = ::std::fs::create_dir_all(&http_client_cache_path);
+    defer! {
+        remove_dir_all(cache_dir).unwrap();
+    }
     http_client_cache_path.set_extension("bin");
 
     let get_http_client = wash()
@@ -323,13 +332,23 @@ fn integration_par_inspect_cached() {
         ])
         .output()
         .expect("failed to pull echo for claims sign test");
-    assert!(get_http_client.status.success());
+    assert!(
+        get_http_client.status.success(),
+        "Reg Pull failed: {get_http_client:?}"
+    );
+    assert!(
+        http_client_cache_path.is_file(),
+        "Artifact file does not exist. Reg Pull output: {get_http_client:?}"
+    );
 
     let remote_inspect = wash()
         .args(["par", "inspect", HTTP_FAKE_OCI, "-o", "json"])
         .output()
         .expect("failed to inspect remote cached registry");
-    assert!(remote_inspect.status.success());
+    assert!(
+        remote_inspect.status.success(),
+        "Remote inspect output: {remote_inspect:?}",
+    );
     let remote_inspect_output = get_json_output(remote_inspect).unwrap();
     let expected_output = json!({
         "issuer": HTTP_ISSUER,
@@ -343,7 +362,8 @@ fn integration_par_inspect_cached() {
         .output()
         .expect("failed to inspect remote cached registry");
 
-    assert!(!remote_inspect_no_cache.status.success());
-
-    remove_file(http_client_cache_path).unwrap();
+    assert!(
+        !remote_inspect_no_cache.status.success(),
+        "Remote inspect output: {remote_inspect_no_cache:?}"
+    );
 }
