@@ -1,9 +1,5 @@
 use anyhow::{Context, Result};
-use std::{
-    env,
-    fs::{create_dir_all, remove_dir_all},
-    path::PathBuf,
-};
+use std::{env, fs::create_dir_all};
 use tempfile::{Builder, NamedTempFile, TempDir};
 
 #[allow(unused)]
