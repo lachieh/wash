@@ -3,7 +3,7 @@ mod common;
 use crate::common::LOCAL_REGISTRY;
 use anyhow::Result;
 use assert_json_diff::assert_json_include;
-use common::{get_json_output, output_to_string, test_dir_file, test_dir_with_subfolder, wash};
+use common::{get_json_output, output_to_string, wash};
 use scopeguard::defer;
 use serde_json::json;
 use std::{
