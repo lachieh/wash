@@ -4,6 +4,7 @@ use std::{
     fs::{create_dir_all, remove_dir_all},
     path::PathBuf,
 };
+use tempfile::{Builder, NamedTempFile, TempDir};
 
 #[allow(unused)]
 pub(crate) const LOCAL_REGISTRY: &str = "localhost:5001";
@@ -31,30 +32,23 @@ pub(crate) fn get_json_output(output: std::process::Output) -> Result<serde_json
 
 #[allow(unused)]
 /// Creates a subfolder in the test directory for use with a specific test
-pub(crate) fn test_dir() -> PathBuf {
-    let manifest_dir = env::var("CARGO_MANIFEST_DIR").expect("$CARGO_MANIFEST_DIR");
-    let test_dir = PathBuf::from(manifest_dir).join("tests/fixtures");
-    remove_dir_all(&test_dir);
-    create_dir_all(&test_dir);
-    test_dir
-}
-
-#[allow(unused)]
-/// Creates a subfolder in the test directory for use with a specific test
-/// It's preferred that the same test that calls this function also
-/// uses std::fs::remove_dir_all to remove the subdirectory
-pub(crate) fn test_dir_with_subfolder(subfolder: &str) -> PathBuf {
-    let test_dir = test_dir();
-    let with_subfolder = test_dir.join(subfolder);
-    remove_dir_all(with_subfolder.clone());
-    create_dir_all(with_subfolder.clone());
-    with_subfolder
+/// that will be dropped when the `TempDir` struct goes out of scope
+pub(crate) fn tmp_test_dir_with_subfolder(subfolder: &str) -> TempDir {
+    let root_dir = &env::var("CARGO_MANIFEST_DIR").expect("$CARGO_MANIFEST_DIR");
+    // Ensure test dir exists
+    let test_dir = format!("{root_dir}/tests/fixtures");
+    create_dir_all(test_dir.clone());
+    Builder::new()
+        .prefix(subfolder)
+        .rand_bytes(5)
+        .tempdir_in(test_dir)
+        .unwrap()
 }
 
 #[allow(unused)]
 /// Returns a PathBuf by appending the subfolder and file arguments
 /// to the test fixtures directory. This does _not_ create the file,
 /// so the test is responsible for initialization and modification of this file
-pub(crate) fn test_dir_file(subfolder: &str, file: &str) -> PathBuf {
-    test_dir_with_subfolder(subfolder).join(file)
+pub(crate) fn tmp_test_file(subfolder: &TempDir, file: &str) -> NamedTempFile {
+    Builder::new().tempfile_in(subfolder.path()).unwrap()
 }

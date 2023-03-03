@@ -1,7 +1,7 @@
 mod common;
 use crate::common::LOCAL_REGISTRY;
 use assert_json_diff::assert_json_include;
-use common::{get_json_output, output_to_string, test_dir_file, test_dir_with_subfolder, wash};
+use common::{get_json_output, output_to_string, tmp_test_dir_with_subfolder, tmp_test_file, wash};
 use serde_json::json;
 use std::{
     env::temp_dir,
@@ -11,7 +11,7 @@ use std::{
 #[test]
 fn integration_claims_sign() {
     const SUBFOLDER: &str = "claims_sign";
-    let sign_dir = test_dir_with_subfolder(SUBFOLDER);
+    let sign_dir = tmp_test_dir_with_subfolder(SUBFOLDER);
     const ISSUER: &str = "SAAAF62YYA6UCKZNSE7UF7GVWEHHYASDSUSSVCEEHTH3WY57DJKVXKIKOY";
     const SUBJECT: &str = "SMAJFHSZUOYLLPIW3HLYOMM7F6GABRPCETIVQ27BVYZ55XQNFYNTUTH57Y";
 
@@ -19,25 +19,25 @@ fn integration_claims_sign() {
     // During the process of signing a module, the previous "jwt" section
     // is cleared from a signed module, so this is just as effective
     // as signing an unsigned wasm
-    let echo = test_dir_file(SUBFOLDER, "echo.wasm");
+    let echo = tmp_test_file(&sign_dir, "echo.wasm");
     let get_hello_wasm = wash()
         .args([
             "reg",
             "pull",
             "wasmcloud.azurecr.io/echo:0.2.1",
             "--destination",
-            echo.to_str().unwrap(),
+            echo.path().to_str().unwrap(),
         ])
         .output()
         .expect("failed to pull echo for claims sign test");
     assert!(get_hello_wasm.status.success());
 
-    let signed_wasm_path = test_dir_file(SUBFOLDER, "echo_signed.wasm");
+    let signed_wasm_path = tmp_test_file(&sign_dir, "echo_signed.wasm");
     let sign_echo = wash()
         .args([
             "claims",
             "sign",
-            echo.to_str().unwrap(),
+            echo.path().to_str().unwrap(),
             "--name",
             "EchoSigned",
             "--http_server",
@@ -47,7 +47,7 @@ fn integration_claims_sign() {
             SUBJECT,
             "--disable-keygen",
             "--destination",
-            signed_wasm_path.to_str().unwrap(),
+            signed_wasm_path.path().to_str().unwrap(),
         ])
         .output()
         .expect("failed to sign echo module");
@@ -56,7 +56,7 @@ fn integration_claims_sign() {
         output_to_string(sign_echo).unwrap(),
         format!(
             "\nSuccessfully signed {} with capabilities: wasmcloud:httpserver\n",
-            signed_wasm_path.to_str().unwrap()
+            signed_wasm_path.path().to_str().unwrap()
         )
     );
 
@@ -69,18 +69,18 @@ fn integration_claims_inspect() {
     const ECHO_OCI: &str = "wasmcloud.azurecr.io/echo:0.2.1";
     const ECHO_ACC: &str = "ACOJJN6WUP4ODD75XEBKKTCCUJJCY5ZKQ56XVKYK4BEJWGVAOOQHZMCW";
     const ECHO_MOD: &str = "MBCFOPM6JW2APJLXJD3Z5O4CN7CPYJ2B4FTKLJUR5YR5MITIU7HD3WD5";
-    let inspect_dir = test_dir_with_subfolder(SUBFOLDER);
+    let inspect_dir = tmp_test_dir_with_subfolder(SUBFOLDER);
     let echo_claims = &format!("{LOCAL_REGISTRY}/echo:claimsinspect");
 
     // Pull the echo module and push to local registry to test local inspect
-    let echo = test_dir_file(SUBFOLDER, "echo.wasm");
+    let echo = tmp_test_file(&inspect_dir, "echo.wasm");
     let get_hello_wasm = wash()
         .args([
             "reg",
             "pull",
             ECHO_OCI,
             "--destination",
-            echo.to_str().unwrap(),
+            echo.path().to_str().unwrap(),
         ])
         .output()
         .expect("failed to pull echo for claims sign test");
@@ -90,7 +90,7 @@ fn integration_claims_inspect() {
             "reg",
             "push",
             echo_claims,
-            echo.to_str().unwrap(),
+            echo.path().to_str().unwrap(),
             "--insecure",
         ])
         .output()
@@ -102,7 +102,7 @@ fn integration_claims_inspect() {
         .args([
             "claims",
             "inspect",
-            echo.to_str().unwrap(),
+            echo.path().to_str().unwrap(),
             "--output",
             "json",
         ])
@@ -238,7 +238,7 @@ fn integration_claims_inspect_cached() {
 #[test]
 fn integration_claims_call_alias() {
     const SUBFOLDER: &str = "call_alias";
-    let call_alias_dir = test_dir_with_subfolder(SUBFOLDER);
+    let call_alias_dir = tmp_test_dir_with_subfolder(SUBFOLDER);
     const ISSUER: &str = "SAADMA65NBETHOHQTXKV7XKQMXYDUS65JOWQORDR3IOMOB3UFZSDOU7TAA";
     const ACC_PKEY: &str = "AALSO6EPE54BWUHXTVJLDIABLYOTXMCOTK52THAIKMKHD32YYWWGQQPW";
     const SUBJECT: &str = "SMAABZ62LGU4SLS4SFK3MD463TRC7ZWMZLYPSVH2AOL3WRZXPBIGZG66JE";
@@ -248,25 +248,25 @@ fn integration_claims_call_alias() {
     // During the process of signing a module, the previous "jwt" section
     // is cleared from a signed module, so this is just as effective
     // as signing an unsigned wasm
-    let logger = test_dir_file(SUBFOLDER, "logger.wasm");
+    let logger = tmp_test_file(&call_alias_dir, "logger.wasm");
     let get_wasm = wash()
         .args([
             "reg",
             "pull",
             "wasmcloud.azurecr.io/logger:0.1.0",
             "--destination",
-            logger.to_str().unwrap(),
+            logger.path().to_str().unwrap(),
         ])
         .output()
         .expect("failed to pull logger for call alias test");
     assert!(get_wasm.status.success());
 
-    let signed_wasm_path = test_dir_file(SUBFOLDER, "logger_signed.wasm");
+    let signed_wasm_path = tmp_test_file(&call_alias_dir, "logger_signed.wasm");
     let sign_logger = wash()
         .args([
             "claims",
             "sign",
-            logger.to_str().unwrap(),
+            logger.path().to_str().unwrap(),
             "--name",
             "Logger",
             "-l",
@@ -277,7 +277,7 @@ fn integration_claims_call_alias() {
             SUBJECT,
             "--disable-keygen",
             "--destination",
-            signed_wasm_path.to_str().unwrap(),
+            signed_wasm_path.path().to_str().unwrap(),
             "--call-alias",
             "wasmcloud/logger_onedotzero",
         ])
@@ -288,7 +288,7 @@ fn integration_claims_call_alias() {
         output_to_string(sign_logger).unwrap(),
         format!(
             "\nSuccessfully signed {} with capabilities: wasmcloud:httpserver,wasmcloud:builtin:logging\n",
-            signed_wasm_path.to_str().unwrap()
+            signed_wasm_path.path().to_str().unwrap()
         )
     );
 
@@ -297,7 +297,7 @@ fn integration_claims_call_alias() {
         .args([
             "claims",
             "inspect",
-            signed_wasm_path.to_str().unwrap(),
+            signed_wasm_path.path().to_str().unwrap(),
             "--output",
             "json",
         ])

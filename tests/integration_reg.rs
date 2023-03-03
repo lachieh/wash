@@ -1,10 +1,7 @@
 mod common;
-use common::{get_json_output, output_to_string, test_dir_file, test_dir_with_subfolder, wash};
+use common::{get_json_output, output_to_string, tmp_test_dir_with_subfolder, tmp_test_file, wash};
 use serde_json::json;
-use std::{
-    fs::{remove_dir_all, File},
-    io::prelude::*,
-};
+use std::{fs::remove_dir_all, io::prelude::*};
 
 const ECHO_WASM: &str = "wasmcloud.azurecr.io/echo:0.2.0";
 const LOGGING_PAR: &str = "wasmcloud.azurecr.io/logging:0.9.1";
@@ -13,9 +10,9 @@ const LOCAL_REGISTRY: &str = "localhost:5001";
 #[test]
 fn integration_pull_basic() {
     const SUBFOLDER: &str = "pull_basic";
-    let pull_dir = test_dir_with_subfolder(SUBFOLDER);
+    let pull_dir = tmp_test_dir_with_subfolder(SUBFOLDER);
 
-    let basic_echo = test_dir_file(SUBFOLDER, "basic_echo.wasm");
+    let basic_echo = tmp_test_file(&pull_dir, "basic_echo.wasm");
 
     let pull_basic = wash()
         .args([
@@ -23,7 +20,7 @@ fn integration_pull_basic() {
             "pull",
             ECHO_WASM,
             "--destination",
-            basic_echo.to_str().unwrap(),
+            basic_echo.path().to_str().unwrap(),
             "--allow-latest",
         ])
         .output()
@@ -38,10 +35,10 @@ fn integration_pull_basic() {
 #[test]
 fn integration_pull_comprehensive() {
     const SUBFOLDER: &str = "pull_comprehensive";
-    let pull_dir = test_dir_with_subfolder(SUBFOLDER);
+    let pull_dir = tmp_test_dir_with_subfolder(SUBFOLDER);
 
-    let comprehensive_echo = test_dir_file(SUBFOLDER, "comprehensive_echo.wasm");
-    let comprehensive_logging = test_dir_file(SUBFOLDER, "comprehensive_logging.par.gz");
+    let comprehensive_echo = tmp_test_file(&pull_dir, "comprehensive_echo.wasm");
+    let comprehensive_logging = tmp_test_file(&pull_dir, "comprehensive_logging.par.gz");
 
     let pull_echo_comprehensive = wash()
         .args([
@@ -49,7 +46,7 @@ fn integration_pull_comprehensive() {
             "pull",
             ECHO_WASM,
             "--destination",
-            comprehensive_echo.to_str().unwrap(),
+            comprehensive_echo.path().to_str().unwrap(),
             "--digest",
             "sha256:a17a163afa8447622055deb049587641a9e23243a6cc4411eb33bd4267214cf3",
             "--output",
@@ -61,7 +58,8 @@ fn integration_pull_comprehensive() {
     assert!(pull_echo_comprehensive.status.success());
     let output = get_json_output(pull_echo_comprehensive).unwrap();
 
-    let expected_json = json!({"file": comprehensive_echo.to_str().unwrap(), "success": true});
+    let expected_json =
+        json!({"file": comprehensive_echo.path().to_str().unwrap(), "success": true});
 
     assert_eq!(output, expected_json);
 
@@ -71,7 +69,7 @@ fn integration_pull_comprehensive() {
             "pull",
             LOGGING_PAR,
             "--destination",
-            comprehensive_logging.to_str().unwrap(),
+            comprehensive_logging.path().to_str().unwrap(),
             "--digest",
             "sha256:169f2764e529c2b57ad20abb87e0854d67bf6f0912896865e2911dee1bf6af98",
             "--output",
@@ -83,7 +81,8 @@ fn integration_pull_comprehensive() {
     assert!(pull_logging_comprehensive.status.success());
     let output = get_json_output(pull_logging_comprehensive).unwrap();
 
-    let expected_json = json!({"file": comprehensive_logging.to_str().unwrap(), "success": true});
+    let expected_json =
+        json!({"file": comprehensive_logging.path().to_str().unwrap(), "success": true});
 
     assert_eq!(output, expected_json);
 
@@ -93,9 +92,9 @@ fn integration_pull_comprehensive() {
 #[test]
 fn integration_push_basic() {
     const SUBFOLDER: &str = "push_basic";
-    let push_dir = test_dir_with_subfolder(SUBFOLDER);
+    let push_dir = tmp_test_dir_with_subfolder(SUBFOLDER);
 
-    let pull_echo_wasm = test_dir_file(SUBFOLDER, "echo.wasm");
+    let pull_echo_wasm = tmp_test_file(&push_dir, "echo.wasm");
 
     // Pull echo.wasm for push tests
     wash()
@@ -104,20 +103,20 @@ fn integration_push_basic() {
             "pull",
             ECHO_WASM,
             "--destination",
-            pull_echo_wasm.to_str().unwrap(),
+            pull_echo_wasm.path().to_str().unwrap(),
         ])
         .output()
         .unwrap_or_else(|_| panic!("failed to pull {ECHO_WASM} for push basic"));
 
     // Push echo.wasm and pull from local registry
     let echo_push_basic = &format!("{LOCAL_REGISTRY}/echo:pushbasic");
-    let localregistry_echo_wasm = test_dir_file(SUBFOLDER, "echo_local.wasm");
+    let localregistry_echo_wasm = tmp_test_file(&push_dir, "echo_local.wasm");
     let push_echo = wash()
         .args([
             "reg",
             "push",
             echo_push_basic,
-            pull_echo_wasm.to_str().unwrap(),
+            pull_echo_wasm.path().to_str().unwrap(),
             "--insecure",
         ])
         .output()
@@ -131,7 +130,7 @@ fn integration_push_basic() {
             echo_push_basic,
             "--insecure",
             "--destination",
-            localregistry_echo_wasm.to_str().unwrap(),
+            localregistry_echo_wasm.path().to_str().unwrap(),
         ])
         .output()
         .expect("failed to pull echo.wasm from local registry");
@@ -144,10 +143,10 @@ fn integration_push_basic() {
 #[test]
 fn integration_push_comprehensive() {
     const SUBFOLDER: &str = "push_comprehensive";
-    let push_dir = test_dir_with_subfolder(SUBFOLDER);
+    let push_dir = tmp_test_dir_with_subfolder(SUBFOLDER);
 
-    let pull_echo_wasm = test_dir_file(SUBFOLDER, "echo.wasm");
-    let pull_logging_par = test_dir_file(SUBFOLDER, "logging.par.gz");
+    let pull_echo_wasm = tmp_test_file(&push_dir, "echo.wasm");
+    let pull_logging_par = tmp_test_file(&push_dir, "logging.par.gz");
 
     // Pull echo.wasm and logging.par.gz for push tests
     wash()
@@ -156,7 +155,7 @@ fn integration_push_comprehensive() {
             "pull",
             ECHO_WASM,
             "--destination",
-            pull_echo_wasm.to_str().unwrap(),
+            pull_echo_wasm.path().to_str().unwrap(),
         ])
         .output()
         .unwrap_or_else(|_| panic!("failed to pull {ECHO_WASM} for push basic"));
@@ -166,14 +165,13 @@ fn integration_push_comprehensive() {
             "pull",
             LOGGING_PAR,
             "--destination",
-            pull_logging_par.to_str().unwrap(),
+            pull_logging_par.path().to_str().unwrap(),
         ])
         .output()
         .unwrap_or_else(|_| panic!("failed to pull {LOGGING_PAR} for push basic"));
 
-    let config_json = test_dir_file(SUBFOLDER, "config.json");
-    let mut config = File::create(config_json.clone()).unwrap();
-    config.write_all(b"{}").unwrap();
+    let mut config_json = tmp_test_file(&push_dir, "config.json");
+    config_json.write_all(b"{}").unwrap();
 
     let logging_push_all_options = &format!("{LOCAL_REGISTRY}/logging:alloptions");
     let push_all_options = wash()
@@ -181,11 +179,11 @@ fn integration_push_comprehensive() {
             "reg",
             "push",
             logging_push_all_options,
-            pull_logging_par.to_str().unwrap(),
+            pull_logging_par.path().to_str().unwrap(),
             "--allow-latest",
             "--insecure",
             "--config",
-            config_json.to_str().unwrap(),
+            config_json.path().to_str().unwrap(),
             "--output",
             "json",
             "--password",

@@ -1,6 +1,6 @@
 mod common;
 use assert_json_diff::assert_json_include;
-use common::{get_json_output, test_dir_file, test_dir_with_subfolder, wash};
+use common::{get_json_output, tmp_test_dir_with_subfolder, tmp_test_file, wash};
 use serde_json::json;
 #[cfg(any(target_os = "linux", target_os = "macos"))]
 use std::fs::create_dir_all;
@@ -39,77 +39,77 @@ fn integration_drain_comprehensive() {
 
 /// Ensures that `wash drain` empties the `wasmcloudcache` directory
 fn integration_drain_lib() {
-    let test_dir = test_dir_with_subfolder("drain_lib");
+    let test_dir = tmp_test_dir_with_subfolder("drain_lib");
     let lib_subdir = &format!("drain_lib/{LIB}");
-    let lib_dir = test_dir_with_subfolder(lib_subdir);
-    let _nested_dir = test_dir_with_subfolder(&format!("{lib_subdir}/a/b/c/d/e"));
+    let lib_dir = tmp_test_dir_with_subfolder(lib_subdir);
+    let _nested_dir = tmp_test_dir_with_subfolder(&format!("{lib_subdir}/a/b/c/d/e"));
 
     // Create dummy wasm and parJEEzy files
-    let wasm = test_dir_file(lib_subdir, "hello.wasm");
+    let wasm = tmp_test_file(&lib_dir, "hello.wasm");
     let mut wasm_file = File::create(wasm).unwrap();
     wasm_file.write_all(b"bytes_or_something_idk").unwrap();
-    let provider = test_dir_file(lib_subdir, "world.par.gz");
+    let provider = tmp_test_file(&lib_dir, "world.par.gz");
     let mut provider_file = File::create(provider).unwrap();
     provider_file.write_all(b"parcheesi").unwrap();
 
     // Set TMPDIR for Unix based systems
-    std::env::set_var("TMPDIR", test_dir.clone());
+    std::env::set_var("TMPDIR", test_dir.path());
     // Set TMP for Windows based systems
-    std::env::set_var("TMP", test_dir.clone());
+    std::env::set_var("TMP", test_dir.path());
 
     let drain_basic = wash()
         .args(["drain", "lib", "-o", "json"])
         .output()
-        .unwrap_or_else(|_| panic!("failed to drain {:?}", lib_dir.clone()));
+        .unwrap_or_else(|_| panic!("failed to drain {:?}", lib_dir.path()));
     assert!(drain_basic.status.success());
 
     let drain_output = get_json_output(drain_basic).unwrap();
     let expected_output = json!({
-        "drained": [ lib_dir.to_str().unwrap() ],
+        "drained": [ lib_dir.path().to_str().unwrap() ],
     });
     assert_json_include!(actual: drain_output, expected: expected_output);
 
     // Ensures that the directory is empty (files have been removed)
-    assert!(lib_dir.read_dir().unwrap().next().is_none());
+    assert!(lib_dir.path().read_dir().unwrap().next().is_none());
 
     remove_dir_all(test_dir).unwrap();
 }
 
 /// Ensures that `wash drain` empties the `wasmcloudcache` directory
 fn integration_drain_oci() {
-    let test_dir = test_dir_with_subfolder("drain_oci");
+    let test_dir = tmp_test_dir_with_subfolder("drain_oci");
     let oci_subdir = &format!("drain_oci/{OCI}");
-    let oci_dir = test_dir_with_subfolder(oci_subdir);
+    let oci_dir = tmp_test_dir_with_subfolder(oci_subdir);
 
-    let _nested_dir = test_dir_with_subfolder(&format!("{oci_subdir}/a/b/c/d/e"));
+    let _nested_dir = tmp_test_dir_with_subfolder(&format!("{oci_subdir}/a/b/c/d/e"));
 
     // Create dummy wasm and parJEEzy files
-    let wasm = test_dir_file(oci_subdir, "hello.wasm");
+    let wasm = tmp_test_file(&oci_dir, "hello.wasm");
     let mut wasm_file = File::create(wasm).unwrap();
     wasm_file.write_all(b"bytes_or_something_idk").unwrap();
-    let provider = test_dir_file(oci_subdir, "world.par.gz");
+    let provider = tmp_test_file(&oci_dir, "world.par.gz");
     let mut provider_file = File::create(provider).unwrap();
     provider_file.write_all(b"parcheesi").unwrap();
 
     // Set TMPDIR for Unix based systems
-    std::env::set_var("TMPDIR", test_dir.clone());
+    std::env::set_var("TMPDIR", test_dir.path());
     // Set TMP for Windows based systems
-    std::env::set_var("TMP", test_dir.clone());
+    std::env::set_var("TMP", test_dir.path());
 
     let drain_basic = wash()
         .args(["drain", "oci", "-o", "json"])
         .output()
-        .unwrap_or_else(|_| panic!("failed to drain {:?}", oci_dir.clone()));
+        .unwrap_or_else(|_| panic!("failed to drain {:?}", oci_dir.path()));
     assert!(drain_basic.status.success());
 
     let drain_output = get_json_output(drain_basic).unwrap();
     let expected_output = json!({
-        "drained": [ oci_dir.to_str().unwrap() ],
+        "drained": [ oci_dir.path().to_str().unwrap() ],
     });
     assert_json_include!(actual: drain_output, expected: expected_output);
 
     // Ensures that the directory is empty (files have been removed)
-    assert!(oci_dir.read_dir().unwrap().next().is_none());
+    assert!(oci_dir.path().read_dir().unwrap().next().is_none());
 
     remove_dir_all(test_dir).unwrap();
 }
@@ -117,45 +117,45 @@ fn integration_drain_oci() {
 /// Ensures that `wash drain` empties the `wasmcloudcache` directory
 #[cfg(any(target_os = "linux", target_os = "macos"))]
 fn integration_drain_all() {
-    let test_dir = test_dir_with_subfolder("drain_all");
+    let test_dir = tmp_test_dir_with_subfolder("drain_all");
     let oci_subdir = &format!("drain_all/{OCI}");
-    let oci_dir = test_dir_with_subfolder(oci_subdir);
+    let oci_dir = tmp_test_dir_with_subfolder(oci_subdir);
     let lib_subdir = &format!("drain_all/{LIB}");
-    let lib_dir = test_dir_with_subfolder(lib_subdir);
+    let lib_dir = tmp_test_dir_with_subfolder(lib_subdir);
 
     let (_sys_tmp_cache, smithy_cache) = set_smithy_cache_dir();
 
-    let _nested_dir = test_dir_with_subfolder(&format!("{oci_subdir}/a/b/c/d/e"));
-    let _nested_dir = test_dir_with_subfolder(&format!("{lib_subdir}/a/b/c/d/e"));
+    let _nested_dir = tmp_test_dir_with_subfolder(&format!("{oci_subdir}/a/b/c/d/e"));
+    let _nested_dir = tmp_test_dir_with_subfolder(&format!("{lib_subdir}/a/b/c/d/e"));
 
     // Create dummy wasm and parJEEzy files
-    let wasm = test_dir_file(oci_subdir, "hello.wasm");
+    let wasm = tmp_test_file(&oci_dir, "hello.wasm");
     let mut wasm_file = File::create(wasm).unwrap();
     wasm_file.write_all(b"bytes_or_something_idk").unwrap();
-    let provider = test_dir_file(lib_subdir, "world.par.gz");
+    let provider = tmp_test_file(&oci_dir, "world.par.gz");
     let mut provider_file = File::create(provider).unwrap();
     provider_file.write_all(b"parcheesi").unwrap();
 
     // Set TMPDIR for Unix based systems
-    std::env::set_var("TMPDIR", test_dir.clone());
+    std::env::set_var("TMPDIR", test_dir.path());
     // Set TMP for Windows based systems
-    std::env::set_var("TMP", test_dir.clone());
+    std::env::set_var("TMP", test_dir.path());
 
     let drain_basic = wash()
         .args(["drain", "all", "-o", "json"])
         .output()
-        .unwrap_or_else(|_| panic!("failed to drain {:?}", oci_dir.clone()));
+        .unwrap_or_else(|_| panic!("failed to drain {:?}", oci_dir.path()));
     assert!(drain_basic.status.success());
 
     let drain_output = get_json_output(drain_basic).unwrap();
     let expected_output = json!({
-        "drained": [ lib_dir.to_str().unwrap(), oci_dir.to_str().unwrap(), smithy_cache ],
+        "drained": [ lib_dir.path().to_str().unwrap(), oci_dir.path().to_str().unwrap(), smithy_cache ],
     });
     assert_json_include!(actual: drain_output, expected: expected_output);
 
     // Ensures that the directory is empty (files have been removed)
-    assert!(lib_dir.read_dir().unwrap().next().is_none());
-    assert!(oci_dir.read_dir().unwrap().next().is_none());
+    assert!(lib_dir.path().read_dir().unwrap().next().is_none());
+    assert!(oci_dir.path().read_dir().unwrap().next().is_none());
 
     remove_dir_all(test_dir).unwrap();
 }
@@ -167,7 +167,7 @@ fn path_to_test_file(smithy_cache_dir: &str) -> PathBuf {
 
 #[cfg(target_os = "linux")]
 fn set_smithy_cache_dir() -> (PathBuf, String) {
-    let tmp_dir = test_dir_with_subfolder("drain_smithy");
+    let tmp_dir = tmp_test_dir_with_subfolder("drain_smithy");
     std::env::set_var("XDG_CACHE_HOME", &format!("{}", &tmp_dir.display()));
     let smithy_cache = format!("{}/smithy", &tmp_dir.display());
     create_dir_all(&PathBuf::from(&smithy_cache)).unwrap();
@@ -178,13 +178,13 @@ fn set_smithy_cache_dir() -> (PathBuf, String) {
 
 #[cfg(target_os = "macos")]
 fn set_smithy_cache_dir() -> (PathBuf, String) {
-    let tmp_dir = test_dir_with_subfolder("drain_smithy");
-    std::env::set_var("HOME", format!("{}", &tmp_dir.display()));
-    let smithy_cache = format!("{}/Library/Caches/smithy", &tmp_dir.display());
+    let tmp_dir = tmp_test_dir_with_subfolder("drain_smithy");
+    std::env::set_var("HOME", format!("{}", &tmp_dir.path().display()));
+    let smithy_cache = format!("{}/Library/Caches/smithy", &tmp_dir.path().display());
     create_dir_all(PathBuf::from(&smithy_cache)).unwrap();
     // write a dummy file inside the smithy cache folder
     std::fs::write(path_to_test_file(&smithy_cache), b"junk").unwrap();
-    (tmp_dir, smithy_cache)
+    (tmp_dir.into_path(), smithy_cache)
 }
 
 #[cfg(any(target_os = "linux", target_os = "macos"))]

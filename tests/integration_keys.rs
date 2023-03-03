@@ -1,6 +1,6 @@
 mod common;
 use assert_json_diff::assert_json_include;
-use common::{get_json_output, output_to_string, test_dir_file, test_dir_with_subfolder, wash};
+use common::{get_json_output, output_to_string, tmp_test_dir_with_subfolder, tmp_test_file, wash};
 use serde_json::json;
 use std::{
     fs::{remove_dir_all, File},
@@ -53,8 +53,8 @@ fn integration_keys_get_basic() {
     const KEYNAME: &str = "keys_get_basic.nk";
     const TESTDIR: &str = "integration_get_basic";
 
-    let get_basic_dir = test_dir_with_subfolder(TESTDIR);
-    let keyfile = test_dir_file(TESTDIR, KEYNAME);
+    let get_basic_dir = tmp_test_dir_with_subfolder(TESTDIR);
+    let keyfile = tmp_test_file(&get_basic_dir, KEYNAME);
     let mut file = File::create(keyfile).unwrap();
     file.write_all(KEYCONTENTS).unwrap();
 
@@ -64,7 +64,7 @@ fn integration_keys_get_basic() {
             "get",
             KEYNAME,
             "-d",
-            get_basic_dir.to_str().unwrap(),
+            get_basic_dir.path().to_str().unwrap(),
         ])
         .output()
         .expect("failed to read key with keys get");
@@ -83,8 +83,8 @@ fn integration_keys_get_comprehensive() {
     const KEYNAME: &str = "keys_get_comprehensive.nk";
     const TESTDIR: &str = "integration_get_comprehensive";
 
-    let get_comprehensive_dir = test_dir_with_subfolder(TESTDIR);
-    let keyfile = test_dir_file(TESTDIR, KEYNAME);
+    let get_comprehensive_dir = tmp_test_dir_with_subfolder(TESTDIR);
+    let keyfile = tmp_test_file(&get_comprehensive_dir, KEYNAME);
     let mut file = File::create(keyfile).unwrap();
     file.write_all(KEYCONTENTS).unwrap();
 
@@ -94,7 +94,7 @@ fn integration_keys_get_comprehensive() {
             "get",
             KEYNAME,
             "-d",
-            get_comprehensive_dir.to_str().unwrap(),
+            get_comprehensive_dir.path().to_str().unwrap(),
             "-o",
             "json",
         ])
@@ -120,10 +120,10 @@ fn integration_list_comprehensive() {
     const KEYTHREECONTENTS: &[u8] = b"SMANLG7XYYUWLMZSNHG2I7XWFS67RDRRDV632XCUKD4W6IQEJ33HAG6P74";
     const TESTDIR: &str = "integration_list_comprehensive";
 
-    let list_comprehensive_dir = test_dir_with_subfolder(TESTDIR);
-    let keyonefile = test_dir_file(TESTDIR, &format!("{KEYONE}.nk"));
-    let keytwofile = test_dir_file(TESTDIR, &format!("{KEYTWO}.nk"));
-    let keythreefile = test_dir_file(TESTDIR, &format!("{KEYTHREE}.nk"));
+    let list_comprehensive_dir = tmp_test_dir_with_subfolder(TESTDIR);
+    let keyonefile = tmp_test_file(&list_comprehensive_dir, &format!("{KEYONE}.nk"));
+    let keytwofile = tmp_test_file(&list_comprehensive_dir, &format!("{KEYTWO}.nk"));
+    let keythreefile = tmp_test_file(&list_comprehensive_dir, &format!("{KEYTHREE}.nk"));
 
     let mut file = File::create(keyonefile).unwrap();
     file.write_all(KEYONECONTENTS).unwrap();
@@ -137,7 +137,7 @@ fn integration_list_comprehensive() {
             "keys",
             "list",
             "-d",
-            list_comprehensive_dir.to_str().unwrap(),
+            list_comprehensive_dir.path().to_str().unwrap(),
         ])
         .output()
         .expect("failed to list keys with keys list");
@@ -145,7 +145,7 @@ fn integration_list_comprehensive() {
     let output = output_to_string(list_output).unwrap();
     assert!(output.contains(&format!(
         "====== Keys found in {} ======",
-        list_comprehensive_dir.to_str().unwrap()
+        list_comprehensive_dir.path().to_str().unwrap()
     )));
     assert!(output.contains(KEYONE));
     assert!(output.contains(KEYTWO));
@@ -156,7 +156,7 @@ fn integration_list_comprehensive() {
             "keys",
             "list",
             "-d",
-            list_comprehensive_dir.to_str().unwrap(),
+            list_comprehensive_dir.path().to_str().unwrap(),
             "-o",
             "json",
         ])

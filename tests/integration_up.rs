@@ -1,10 +1,10 @@
 use std::{
     fs::{read_to_string, remove_dir_all},
-    path::PathBuf,
+    path::Path,
 };
 
 use anyhow::{anyhow, Result};
-use common::{test_dir_with_subfolder, wash};
+use common::{tmp_test_dir_with_subfolder, wash};
 use sysinfo::{ProcessExt, SystemExt};
 use tokio::process::Child;
 use wash_lib::start::{ensure_nats_server, start_nats_server, NatsConfig};
@@ -13,8 +13,8 @@ mod common;
 
 #[test]
 fn integration_up_can_start_wasmcloud_and_actor() {
-    let dir = test_dir_with_subfolder("can_start_wasmcloud");
-    let path = dir.join("washup.log");
+    let dir = tmp_test_dir_with_subfolder("can_start_wasmcloud");
+    let path = dir.path().join("washup.log");
     let stdout = std::fs::File::create(&path).expect("could not create log file for wash up test");
 
     let mut up_cmd = wash()
@@ -77,8 +77,8 @@ fn integration_up_can_start_wasmcloud_and_actor() {
 
 #[test]
 fn can_stop_detached_host() {
-    let dir = test_dir_with_subfolder("can_stop_wasmcloud");
-    let path = dir.join("washup.log");
+    let dir = tmp_test_dir_with_subfolder("can_stop_wasmcloud");
+    let path = dir.path().join("washup.log");
     let stdout = std::fs::File::create(&path).expect("could not create log file for wash up test");
 
     let mut up_cmd = wash()
@@ -135,11 +135,11 @@ fn can_stop_detached_host() {
 
 #[tokio::test]
 async fn doesnt_kill_unowned_nats() -> Result<()> {
-    let dir = test_dir_with_subfolder("doesnt_kill_unowned_nats");
-    let path = dir.join("washup.log");
+    let dir = tmp_test_dir_with_subfolder("doesnt_kill_unowned_nats");
+    let path = dir.path().join("washup.log");
     let stdout = std::fs::File::create(&path).expect("could not create log file for wash up test");
 
-    let mut nats = start_nats(5895, &dir).await?;
+    let mut nats = start_nats(5895, dir.path()).await?;
 
     let mut up_cmd = wash()
         .args([
@@ -202,7 +202,7 @@ async fn doesnt_kill_unowned_nats() -> Result<()> {
     Ok(())
 }
 
-async fn start_nats(port: u16, nats_install_dir: &PathBuf) -> Result<Child> {
+async fn start_nats(port: u16, nats_install_dir: &Path) -> Result<Child> {
     let nats_binary = ensure_nats_server("v2.8.4", nats_install_dir).await?;
     let config = NatsConfig::new_standalone("127.0.0.1", port, None);
     start_nats_server(nats_binary, std::process::Stdio::null(), config).await
