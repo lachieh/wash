@@ -1,6 +1,7 @@
 mod common;
 
 use crate::common::LOCAL_REGISTRY;
+use anyhow::Result;
 use assert_json_diff::assert_json_include;
 use common::{get_json_output, output_to_string, test_dir_file, test_dir_with_subfolder, wash};
 use scopeguard::defer;
@@ -10,32 +11,26 @@ use std::{
     fs::{remove_dir_all, File},
     io::prelude::*,
 };
+use tempfile::TempDir;
 
 #[test]
 /// Running create and insert tests together
-fn integration_create_and_insert() {
-    const SUBFOLDER: &str = "par_create_insert";
+fn integration_create_and_insert() -> Result<()> {
     const ISSUER: &str = "SAACTTUPKR55VUWUDK7GJ5SU5KGED455FR7BDO46RUVOTHUWKBLECLH2UU";
     const SUBJECT: &str = "SVAOZUSBWWFL65P255DOHIETPTXUQMM5ETLSYPITI5G4K4HI6M2CDAPWAU";
-    let test_dir = test_dir_with_subfolder(SUBFOLDER);
-    defer! {
-        remove_dir_all(test_dir).unwrap();
-    }
-    let pargz = test_dir_file(SUBFOLDER, "test.par.gz");
+    let test_dir = TempDir::new()?;
+    let pargz = test_dir.path().join("test.par.gz");
 
-    integration_par_create(ISSUER, SUBJECT, pargz.to_str().unwrap());
-    integration_par_insert(ISSUER, SUBJECT, pargz.to_str().unwrap());
+    integration_par_create(ISSUER, SUBJECT, pargz.to_str().unwrap())?;
+    integration_par_insert(ISSUER, SUBJECT, pargz.to_str().unwrap())?;
+    Ok(())
 }
 
 /// Tests creation of a provider archive file with an initial binary
-fn integration_par_create(issuer: &str, subject: &str, archive: &str) {
+fn integration_par_create(issuer: &str, subject: &str, archive: &str) -> Result<()> {
     const ARCH: &str = "x86_64-linux";
-    const SUBFOLDER: &str = "create_bin_folder";
-    let bin_folder = test_dir_with_subfolder(SUBFOLDER);
-    defer! {
-        remove_dir_all(bin_folder).unwrap();
-    }
-    let binary = test_dir_file(SUBFOLDER, "linux.so");
+    let bin_folder = TempDir::new()?;
+    let binary = bin_folder.path().join("linux.so");
     let mut bin_file = File::create(binary.clone()).unwrap();
     bin_file.write_all(b"01100010 01110100 01110111").unwrap();
 
@@ -92,24 +87,21 @@ fn integration_par_create(issuer: &str, subject: &str, archive: &str) {
         "version": "3.2.1"
     });
     assert_json_include!(actual: output, expected: expected);
+    Ok(())
 }
 
 /// Tests inserting multiple binaries into an existing provider archive file
-fn integration_par_insert(issuer: &str, subject: &str, archive: &str) {
-    const SUBFOLDER: &str = "insert_bin_folder";
+fn integration_par_insert(issuer: &str, subject: &str, archive: &str) -> Result<()> {
     const ARCH1: &str = "mips64-android";
     const ARCH2: &str = "aarch64-ios";
 
-    let insert_dir = test_dir_with_subfolder(SUBFOLDER);
-    defer! {
-        remove_dir_all(insert_dir).unwrap();
-    }
+    let insert_dir = TempDir::new()?;
 
-    let bin1 = test_dir_file(SUBFOLDER, "android.so");
+    let bin1 = insert_dir.path().join("android.so");
     let mut bin1_file = File::create(bin1.clone()).unwrap();
     bin1_file.write_all(b"01101100 01100111").unwrap();
 
-    let bin2 = test_dir_file(SUBFOLDER, "ios.dylib");
+    let bin2 = insert_dir.path().join("ios.dylib");
     let mut bin2_file = File::create(bin2.clone()).unwrap();
     bin2_file.write_all(b"01101001 01101111 01110011").unwrap();
 
@@ -220,22 +212,19 @@ fn integration_par_insert(issuer: &str, subject: &str, archive: &str) {
     assert!(targets.contains(&ARCH1.to_string()));
     assert!(targets.contains(&ARCH2.to_string()));
     assert!(targets.contains(&"x86_64-linux".to_string()));
+    Ok(())
 }
 
 #[test]
-fn integration_par_inspect() {
-    const SUBFOLDER: &str = "par_inspect";
+fn integration_par_inspect() -> Result<()> {
     const HTTP_OCI: &str = "wasmcloud.azurecr.io/httpclient:0.3.5";
     const HTTP_ISSUER: &str = "ACOJJN6WUP4ODD75XEBKKTCCUJJCY5ZKQ56XVKYK4BEJWGVAOOQHZMCW";
     const HTTP_SERVICE: &str = "VCCVLH4XWGI3SGARFNYKYT2A32SUYA2KVAIV2U2Q34DQA7WWJPFRKIKM";
-    let inspect_dir = test_dir_with_subfolder(SUBFOLDER);
-    defer! {
-        remove_dir_all(inspect_dir).unwrap();
-    }
+    let inspect_dir = TempDir::new()?;
     let httpclient_parinspect = &format!("{LOCAL_REGISTRY}/httpclient:parinspect");
 
     // Pull the echo module and push to local registry to test local inspect
-    let local_http_client_path = test_dir_file(SUBFOLDER, "httpclient.wasm");
+    let local_http_client_path = inspect_dir.path().join("httpclient.wasm");
     let get_http_client = wash()
         .args([
             "reg",
@@ -311,6 +300,7 @@ fn integration_par_inspect() {
     assert!(remote_inspect.status.success());
     let remote_inspect_output = get_json_output(remote_inspect).unwrap();
     assert_json_include!(actual: remote_inspect_output, expected: inspect_expected);
+    Ok(())
 }
 
 #[test]
