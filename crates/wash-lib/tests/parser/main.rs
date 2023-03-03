@@ -44,8 +44,7 @@ fn rust_actor() {
             version: Version::parse("0.1.0").unwrap(),
             path: PathBuf::from("./tests/parser/files/")
                 .canonicalize()
-                .unwrap(),
-            wasm_bin_name: None,
+                .unwrap()
         }
     );
 }
@@ -86,8 +85,7 @@ fn tinygo_actor() {
             version: Version::parse("0.1.0").unwrap(),
             path: PathBuf::from("./tests/parser/files/")
                 .canonicalize()
-                .unwrap(),
-            wasm_bin_name: None,
+                .unwrap()
         }
     );
 }
@@ -268,8 +266,7 @@ fn minimal_rust_actor() {
             version: Version::parse("0.1.0").unwrap(),
             path: PathBuf::from("./tests/parser/files/")
                 .canonicalize()
-                .unwrap(),
-            wasm_bin_name: None,
+                .unwrap()
         }
     )
 }
@@ -313,8 +310,7 @@ fn cargo_toml_actor() {
             version: Version::parse("0.200.0").unwrap(),
             path: PathBuf::from("./tests/parser/files/withcargotoml")
                 .canonicalize()
-                .unwrap(),
-            wasm_bin_name: None,
+                .unwrap()
         }
     )
 }

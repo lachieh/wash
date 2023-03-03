@@ -134,12 +134,6 @@ fn build_rust_actor(
         bail!("Compiling actor failed: {}", result.to_string())
     }
 
-    // Determine the wasm binary name
-    let wasm_bin_name = common_config
-        .wasm_bin_name
-        .as_ref()
-        .unwrap_or(&common_config.name);
-
     let wasm_file = PathBuf::from(format!(
         "{}/{}/release/{}.wasm",
         rust_config
@@ -148,7 +142,7 @@ fn build_rust_actor(
             .unwrap_or_else(|| PathBuf::from("target"))
             .to_string_lossy(),
         actor_config.wasm_target,
-        wasm_bin_name,
+        common_config.name,
     ));
 
     if !wasm_file.exists() {
@@ -159,7 +153,7 @@ fn build_rust_actor(
     }
 
     // move the file out into the build/ folder for parity with tinygo and convienience for users.
-    let copied_wasm_file = PathBuf::from(format!("build/{}.wasm", wasm_bin_name));
+    let copied_wasm_file = PathBuf::from(format!("build/{}.wasm", common_config.name));
     if let Some(p) = copied_wasm_file.parent() {
         fs::create_dir_all(p)?;
     }
