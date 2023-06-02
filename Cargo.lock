@@ -169,40 +169,6 @@ dependencies = [
 
 [[package]]
 name = "async-nats"
-version = "0.23.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9323e13cccc5d28a249e3d0c22600129703c75283a73fc3ebb3dbd2d51bef1cb"
-dependencies = [
- "base64 0.13.1",
- "base64-url",
- "bytes",
- "futures",
- "http",
- "itertools",
- "itoa",
- "lazy_static",
- "nkeys",
- "nuid 0.3.2",
- "once_cell",
- "regex",
- "ring",
- "rustls-native-certs",
- "rustls-pemfile",
- "serde",
- "serde_json",
- "serde_nanos",
- "serde_repr",
- "subslice",
- "time 0.3.20",
- "tokio",
- "tokio-retry",
- "tokio-rustls 0.23.4",
- "tracing",
- "url",
-]
-
-[[package]]
-name = "async-nats"
 version = "0.29.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1174495e436c928905018f10a36160f7a8a6786450f50f4ce7fba05d1539704c"
@@ -215,7 +181,7 @@ dependencies = [
  "http",
  "itoa",
  "memchr",
- "nkeys",
+ "nkeys 0.2.0",
  "nuid 0.3.2",
  "once_cell",
  "rand",
@@ -241,7 +207,7 @@ version = "0.24.0-ALPHA.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8cdefe54cd7867d937c0a507d2a3a830af410044282cd3e4002b5b7860e1892e"
 dependencies = [
- "rustls 0.21.0",
+ "rustls",
  "tokio",
  "webpki",
 ]
@@ -628,26 +594,9 @@ dependencies = [
  "atty",
  "bitflags",
  "strsim 0.8.0",
- "textwrap 0.11.0",
+ "textwrap",
  "unicode-width",
  "vec_map",
-]
-
-[[package]]
-name = "clap"
-version = "3.2.25"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4ea181bf566f71cb9a5d17a59e1871af638180a18fb0035c92ae62b705207123"
-dependencies = [
- "atty",
- "bitflags",
- "clap_derive 3.2.25",
- "clap_lex 0.2.4",
- "indexmap",
- "once_cell",
- "strsim 0.10.0",
- "termcolor",
- "textwrap 0.16.0",
 ]
 
 [[package]]
@@ -657,7 +606,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "93aae7a4192245f70fe75dd9157fc7b4a5bf53e88d30bd4396f7d8f9284d5acc"
 dependencies = [
  "clap_builder",
- "clap_derive 4.3.0",
+ "clap_derive",
  "once_cell",
 ]
 
@@ -670,7 +619,7 @@ dependencies = [
  "anstream",
  "anstyle",
  "bitflags",
- "clap_lex 0.5.0",
+ "clap_lex",
  "strsim 0.10.0",
 ]
 
@@ -685,19 +634,6 @@ dependencies = [
 
 [[package]]
 name = "clap_derive"
-version = "3.2.25"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ae6371b8bdc8b7d3959e9cf7b22d4435ef3e79e138688421ec654acf8c81b008"
-dependencies = [
- "heck 0.4.1",
- "proc-macro-error",
- "proc-macro2",
- "quote",
- "syn 1.0.109",
-]
-
-[[package]]
-name = "clap_derive"
 version = "4.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "191d9573962933b4027f932c600cd252ce27a8ad5979418fe78e43c07996f27b"
@@ -706,15 +642,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.15",
-]
-
-[[package]]
-name = "clap_lex"
-version = "0.2.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2850f2f5a82cbf437dd5af4d49848fbdfc27c157c3d010345776f952765261c5"
-dependencies = [
- "os_str_bytes",
 ]
 
 [[package]]
@@ -1667,9 +1594,9 @@ checksum = "0646026eb1b3eea4cd9ba47912ea5ce9cc07713d105b1a14698f4e6433d348b7"
 dependencies = [
  "http",
  "hyper",
- "rustls 0.21.0",
+ "rustls",
  "tokio",
- "tokio-rustls 0.24.0",
+ "tokio-rustls",
 ]
 
 [[package]]
@@ -2069,6 +1996,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "nkeys"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c2d151f6ece2f3d1077f6c779268de2516653d8344ddde65addd785cce764fe5"
+dependencies = [
+ "byteorder 1.4.3",
+ "data-encoding",
+ "ed25519-dalek",
+ "getrandom",
+ "log",
+ "rand",
+ "signatory",
+]
+
+[[package]]
 name = "nom"
 version = "7.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2279,12 +2221,6 @@ dependencies = [
  "dlv-list",
  "hashbrown",
 ]
-
-[[package]]
-name = "os_str_bytes"
-version = "6.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ceedf44fb00f2d1984b0bc98102627ce622e083e49a5bacdb3e514fa4238e267"
 
 [[package]]
 name = "output_vt100"
@@ -2597,9 +2533,9 @@ dependencies = [
 
 [[package]]
 name = "provider-archive"
-version = "0.6.0"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e91058846d2bdeaea55ce059f375e1af0e57f9cfad83fd6702d539c45e8d26d7"
+checksum = "3f02e3a69a868e932a76ee5e026ae1923e761f157aaf3ad0b9d4906eaebf62fc"
 dependencies = [
  "async-compression",
  "data-encoding",
@@ -2607,7 +2543,7 @@ dependencies = [
  "tokio",
  "tokio-stream",
  "tokio-tar",
- "wascap 0.8.0",
+ "wascap 0.11.0",
 ]
 
 [[package]]
@@ -2774,13 +2710,13 @@ dependencies = [
  "once_cell",
  "percent-encoding",
  "pin-project-lite",
- "rustls 0.21.0",
+ "rustls",
  "rustls-pemfile",
  "serde",
  "serde_json",
  "serde_urlencoded",
  "tokio",
- "tokio-rustls 0.24.0",
+ "tokio-rustls",
  "tokio-util 0.7.8",
  "tower-service",
  "url",
@@ -2884,18 +2820,6 @@ dependencies = [
  "libc",
  "linux-raw-sys",
  "windows-sys 0.48.0",
-]
-
-[[package]]
-name = "rustls"
-version = "0.20.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fff78fc74d175294f4e83b28343315ffcfb114b156f0185e9741cb5570f50e2f"
-dependencies = [
- "log",
- "ring",
- "sct",
- "webpki",
 ]
 
 [[package]]
@@ -3259,6 +3183,23 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a507befe795404456341dfab10cef66ead4c041f62b8b11bbb92bffe5d0953e0"
 
 [[package]]
+name = "smithy-bindgen"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "72465f7ba4112b55816e2c9eac7b36204ea1c94f5fd1b12996980d9e1785dfc5"
+dependencies = [
+ "atelier_json",
+ "proc-macro-error",
+ "proc-macro2",
+ "quote",
+ "serde",
+ "serde_json",
+ "syn 1.0.109",
+ "tracing",
+ "weld-codegen",
+]
+
+[[package]]
 name = "snafu"
 version = "0.6.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3358,15 +3299,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 1.0.109",
-]
-
-[[package]]
-name = "subslice"
-version = "0.2.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e0a8e4809a3bb02de01f1f7faf1ba01a83af9e8eabcd4d31dd6e413d14d56aae"
-dependencies = [
- "memchr",
 ]
 
 [[package]]
@@ -3481,12 +3413,6 @@ checksum = "d326610f408c7a4eb6f51c37c330e496b08506c9457c9d34287ecc38809fb060"
 dependencies = [
  "unicode-width",
 ]
-
-[[package]]
-name = "textwrap"
-version = "0.16.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "222a222a5bfe1bba4a77b45ec488a741b3cb8872e5e499451fd7d0129c9c7c3d"
 
 [[package]]
 name = "thiserror"
@@ -3624,22 +3550,11 @@ dependencies = [
 
 [[package]]
 name = "tokio-rustls"
-version = "0.23.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c43ee83903113e03984cb9e5cebe6c04a5116269e900e3ddba8f068a62adda59"
-dependencies = [
- "rustls 0.20.8",
- "tokio",
- "webpki",
-]
-
-[[package]]
-name = "tokio-rustls"
 version = "0.24.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e0d409377ff5b1e3ca6437aa86c1eb7d40c134bfec254e44c830defa92669db5"
 dependencies = [
- "rustls 0.21.0",
+ "rustls",
  "tokio",
 ]
 
@@ -4049,7 +3964,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ac1f43286a28056f987429e3c347d561a726d68d2b892e9d2b6756287486381d"
 dependencies = [
  "anyhow",
- "async-nats 0.29.0",
+ "async-nats",
  "async-trait",
  "bytes",
  "chrono",
@@ -4057,7 +3972,7 @@ dependencies = [
  "futures",
  "indexmap",
  "lazy_static",
- "nkeys",
+ "nkeys 0.2.0",
  "rand",
  "semver",
  "serde",
@@ -4104,7 +4019,7 @@ dependencies = [
  "humantime",
  "lazy_static",
  "log",
- "nkeys",
+ "nkeys 0.2.0",
  "nuid 0.3.2",
  "parity-wasm",
  "ring",
@@ -4115,9 +4030,9 @@ dependencies = [
 
 [[package]]
 name = "wascap"
-version = "0.10.1"
+version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f3a85c9ab66dd6a39400cc7235b803c8819c3b76405bce83f8e6c540a8abf89a"
+checksum = "c38c03de923f80027cb62281f520bd97245a38eeb85a53f435a110509d044551"
 dependencies = [
  "base64 0.13.1",
  "data-encoding",
@@ -4125,7 +4040,7 @@ dependencies = [
  "humantime",
  "lazy_static",
  "log",
- "nkeys",
+ "nkeys 0.3.0",
  "nuid 0.4.1",
  "ring",
  "serde",
@@ -4142,7 +4057,7 @@ version = "0.18.0-alpha.2"
 dependencies = [
  "anyhow",
  "assert-json-diff",
- "async-nats 0.29.0",
+ "async-nats",
  "atelier_core 0.2.22",
  "bytes",
  "cargo_atelier",
@@ -4157,7 +4072,7 @@ dependencies = [
  "envmnt",
  "indicatif",
  "log",
- "nkeys",
+ "nkeys 0.3.0",
  "oci-distribution",
  "once_cell",
  "provider-archive",
@@ -4185,12 +4100,12 @@ dependencies = [
  "tokio",
  "toml 0.7.4",
  "wadm",
- "wascap 0.10.1",
+ "wascap 0.11.0",
  "wash-lib",
- "wasmbus-rpc 0.13.0",
+ "wasmbus-rpc",
  "wasmcloud-control-interface",
  "wasmcloud-test-util",
- "weld-codegen 0.7.0",
+ "weld-codegen",
  "which",
 ]
 
@@ -4200,7 +4115,7 @@ version = "0.9.0-alpha.2"
 dependencies = [
  "anyhow",
  "async-compression",
- "async-nats 0.29.0",
+ "async-nats",
  "cargo_metadata",
  "cargo_toml",
  "claims",
@@ -4216,7 +4131,7 @@ dependencies = [
  "ignore",
  "indicatif",
  "log",
- "nkeys",
+ "nkeys 0.3.0",
  "oci-distribution",
  "path-absolutize",
  "provider-archive",
@@ -4236,10 +4151,10 @@ dependencies = [
  "toml 0.7.4",
  "wadm",
  "walkdir",
- "wascap 0.10.1",
- "wasmbus-rpc 0.13.0",
+ "wascap 0.11.0",
+ "wasmbus-rpc",
  "wasmcloud-control-interface",
- "weld-codegen 0.7.0",
+ "weld-codegen",
 ]
 
 [[package]]
@@ -4322,9 +4237,9 @@ checksum = "0046fef7e28c3804e5e38bfa31ea2a0f73905319b677e57ebe37e49358989b5d"
 
 [[package]]
 name = "wasm-encoder"
-version = "0.25.0"
+version = "0.29.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4eff853c4f09eec94d76af527eddad4e9de13b11d6286a1ef7134bc30135a2b7"
+checksum = "18c41dbd92eaebf3612a39be316540b8377c871cb9bde6b064af962984912881"
 dependencies = [
  "leb128",
 ]
@@ -4366,48 +4281,11 @@ dependencies = [
 
 [[package]]
 name = "wasmbus-rpc"
-version = "0.11.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "40741670f20464a709dda3a7b036cd84fc1210f8399fb85e6bf7f56893654c4c"
-dependencies = [
- "async-nats 0.23.0",
- "async-trait",
- "atty",
- "base64 0.13.1",
- "bytes",
- "cfg-if",
- "data-encoding",
- "futures",
- "lazy_static",
- "minicbor 0.17.1",
- "minicbor-ser",
- "nkeys",
- "once_cell",
- "rmp-serde",
- "serde",
- "serde_bytes",
- "serde_json",
- "sha2 0.10.6",
- "thiserror",
- "time 0.3.20",
- "tokio",
- "toml 0.5.11",
- "tracing",
- "tracing-futures",
- "tracing-subscriber",
- "uuid 1.3.1",
- "wascap 0.8.0",
- "wasmbus-macros",
- "weld-codegen 0.6.0",
-]
-
-[[package]]
-name = "wasmbus-rpc"
 version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2ba72e61b8361650149b2650b72c583a1d50ac78f75213b74eaec049699c5d93"
 dependencies = [
- "async-nats 0.29.0",
+ "async-nats",
  "async-trait",
  "atty",
  "base64 0.13.1",
@@ -4418,7 +4296,7 @@ dependencies = [
  "lazy_static",
  "minicbor 0.17.1",
  "minicbor-ser",
- "nkeys",
+ "nkeys 0.2.0",
  "once_cell",
  "opentelemetry",
  "opentelemetry-otlp",
@@ -4438,7 +4316,7 @@ dependencies = [
  "uuid 1.3.1",
  "wascap 0.8.0",
  "wasmbus-macros",
- "weld-codegen 0.7.0",
+ "weld-codegen",
 ]
 
 [[package]]
@@ -4447,7 +4325,7 @@ version = "0.25.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9dc1ae78202376144100b410d7d8b9d48c2845018f157cbd3a8bc817cfa2fcec"
 dependencies = [
- "async-nats 0.29.0",
+ "async-nats",
  "cloudevents-sdk 0.6.0",
  "data-encoding",
  "futures",
@@ -4458,56 +4336,40 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-futures",
- "wasmbus-rpc 0.13.0",
-]
-
-[[package]]
-name = "wasmcloud-interface-testing"
-version = "0.7.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "07cda5358bdc6d7739a8510aa5ea264d3930b239ffdd6eee8c39fbae2577dd76"
-dependencies = [
- "async-trait",
- "regex",
- "rmp-serde",
- "serde",
- "serde_bytes",
- "serde_json",
- "wasmbus-rpc 0.11.2",
- "weld-codegen 0.5.0",
+ "wasmbus-rpc",
 ]
 
 [[package]]
 name = "wasmcloud-test-util"
-version = "0.6.4"
+version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e61ffa428b4c302c24802180cd406039c632091dcd9c0952ffa4d9283b0e55b8"
+checksum = "73878d38774d9964678e20ef1cd2751fefef454e8c832fcffc0dc1b59dc9853a"
 dependencies = [
  "anyhow",
- "async-nats 0.23.0",
  "async-trait",
- "base64 0.13.1",
+ "base64 0.21.0",
  "futures",
  "log",
- "nkeys",
+ "nkeys 0.2.0",
  "regex",
  "serde",
+ "serde_bytes",
  "serde_json",
+ "smithy-bindgen",
  "termcolor",
  "tokio",
- "toml 0.5.11",
- "wasmbus-rpc 0.11.2",
- "wasmcloud-interface-testing",
+ "toml 0.7.4",
+ "wasmbus-rpc",
 ]
 
 [[package]]
 name = "wasmparser"
-version = "0.102.0"
+version = "0.107.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "48134de3d7598219ab9eaf6b91b15d8e50d31da76b8519fe4ecfcec2cf35104b"
+checksum = "29e3ac9b780c7dda0cac7a52a5d6d2d6707cc6e3451c9db209b6c758f40d7acb"
 dependencies = [
  "indexmap",
- "url",
+ "semver",
 ]
 
 [[package]]
@@ -4537,66 +4399,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b6c71e40d7d2c34a5106301fb632274ca37242cd0c9d3e64dbece371a40a2d87"
 dependencies = [
  "webpki",
-]
-
-[[package]]
-name = "weld-codegen"
-version = "0.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4a116c5da028abf02e952882a998e5aef9dabca49a86569c39904fe341386546"
-dependencies = [
- "Inflector",
- "anyhow",
- "atelier_assembler",
- "atelier_core 0.2.22",
- "atelier_json",
- "atelier_smithy",
- "bytes",
- "cfg-if",
- "clap 3.2.25",
- "directories",
- "downloader",
- "handlebars",
- "lazy_static",
- "lexical-sort",
- "reqwest",
- "rustc-hash",
- "semver",
- "serde",
- "serde_json",
- "tempfile",
- "thiserror",
- "toml 0.5.11",
-]
-
-[[package]]
-name = "weld-codegen"
-version = "0.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2c0897960d6e7c55863b78d5bb48858c7f243a731c416f12cc47854b74ca1a85"
-dependencies = [
- "Inflector",
- "anyhow",
- "atelier_assembler",
- "atelier_core 0.2.22",
- "atelier_json",
- "atelier_smithy",
- "bytes",
- "cfg-if",
- "clap 4.3.0",
- "directories",
- "downloader",
- "handlebars",
- "lazy_static",
- "lexical-sort",
- "reqwest",
- "rustc-hash",
- "semver",
- "serde",
- "serde_json",
- "tempfile",
- "thiserror",
- "toml 0.5.11",
 ]
 
 [[package]]

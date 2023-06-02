@@ -300,9 +300,9 @@ async fn rpc_client_from_opts(
             nc,
             WASH_HOST_ID.to_string(),
             Some(Duration::from_millis(opts.timeout_ms)),
-            std::sync::Arc::new(nkeys::KeyPair::from_seed(&extract_arg_value(
-                cluster_seed.as_ref(),
-            )?)?),
+            std::sync::Arc::new(wasmcloud_test_util::nkeys::KeyPair::from_seed(
+                &extract_arg_value(cluster_seed.as_ref())?,
+            )?),
         ),
         opts.timeout_ms,
     ))
